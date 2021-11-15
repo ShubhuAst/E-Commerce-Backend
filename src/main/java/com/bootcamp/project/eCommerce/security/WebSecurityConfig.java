@@ -60,7 +60,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
                 .antMatchers("/register/*",
                         "/session/login",
-                        "session/reset/password/link").anonymous()
+                        "/session/reset/password/link").anonymous()
 
                 .antMatchers("/session/admin/*").hasRole(ROLE_ADMIN)
 

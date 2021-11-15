@@ -14,6 +14,5 @@ public interface LoginLogoutService {
 
     public ResponseHandler sendPasswordResetToken(ReSendTokenSaveCO reSendTokenSaveCO) throws Exception;
 
-
     public ResponseHandler resetPassword(String token, ResetPasswordSaveCO resetPasswordSaveCO);
 }

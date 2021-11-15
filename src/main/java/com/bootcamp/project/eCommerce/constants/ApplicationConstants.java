@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public enum ApplicationConstants {
 
-    MASTER_ADMIN;
+    MASTER_ADMIN,
+    DEFAULT_PRODUCT_IMAGE();
 
     private String data;
 

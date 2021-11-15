@@ -93,6 +93,8 @@ public enum AppResponse {
     VARIATION_NOT_FOUND(HttpStatus.NOT_FOUND, "Product Variation Not Found"),
     VARIATION_UPDATED(HttpStatus.OK, "Product Variation Updated"),
 
+    METADATA_FIELD_LIST_ADDED(HttpStatus.OK, "Product Metadata Field List Added Successfully"),
+
     OK(HttpStatus.OK, "Success"),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Error");
 

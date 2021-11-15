@@ -128,8 +128,8 @@ public class CustomerServiceImpl implements CustomerService {
         if (user == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        if (user.getIsActive()) {
-            return new ResponseHandler(AppResponse.ACCOUNT_ALREADY_ACTIVE);
+        if (!user.getIsActive()) {
+            return new ResponseHandler(AppResponse.ACCOUNT_DISABLE);
         }
 
 //        if (user.getAuthorizationToken().getToken() != null){
