@@ -75,7 +75,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         ROLE_CUSTOMER,
                         ROLE_SELLER)
 
-                .anyRequest().authenticated()
                 .and().exceptionHandling()
                 .authenticationEntryPoint(tokenAuthenticationEntryPoint)
                 .and().sessionManagement()
