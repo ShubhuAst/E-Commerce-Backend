@@ -2,16 +2,16 @@ package com.bootcamp.project.eCommerce.co_dto.dto;
 
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -68,7 +68,7 @@ public class UserDTO {
 //
 //    List<ProductReview> productReviews;
 //
-//    List<Order_> orders;
+//    List<Order> orders;
 //
 //    Cart cart;
 //

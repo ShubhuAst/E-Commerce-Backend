@@ -1,17 +1,13 @@
 package com.bootcamp.project.eCommerce.service.servicesImpl;
 
-import com.bootcamp.project.eCommerce.HelperMethods;
 import com.bootcamp.project.eCommerce.ResponseHandler;
-import com.bootcamp.project.eCommerce.co_dto.dto.ProductCategoryDTO;
 import com.bootcamp.project.eCommerce.co_dto.dto.ProductDTO;
-import com.bootcamp.project.eCommerce.co_dto.dto.SupportingProductVariationDTO;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.AdminSaveCO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.FilterSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.UserSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.ProductAdminFilter;
+import com.bootcamp.project.eCommerce.constants.AppConstants;
+import com.bootcamp.project.eCommerce.constants.AppData;
 import com.bootcamp.project.eCommerce.constants.AppResponse;
-import com.bootcamp.project.eCommerce.constants.ApplicationConstants;
-import com.bootcamp.project.eCommerce.constants.FileFor;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
 import com.bootcamp.project.eCommerce.pojos.productFlow.Product;
 import com.bootcamp.project.eCommerce.pojos.productFlow.category.Category;
@@ -20,14 +16,15 @@ import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.GrantedAuthorityImpl;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.User;
 import com.bootcamp.project.eCommerce.repos.*;
-import com.bootcamp.project.eCommerce.security.TokenUtil;
+import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
 import com.bootcamp.project.eCommerce.service.services.AdminService;
+import com.bootcamp.project.eCommerce.utils.Utils;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,54 +35,30 @@ import java.io.IOException;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AdminServiceImpl implements AdminService {
 
-    @Autowired
-    CustomerRepository customerRepository;
-
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    SellerRepository sellerRepository;
-
-    @Autowired
-    EmailSenderService emailSenderService;
-
-    @Autowired
-    HelperMethods helperMethods;
-
-    @Autowired
-    FileUploadService fileUploadService;
-
-    @Autowired
-    TokenUtil tokenUtil;
-
-    @Autowired
-    ModelMapper modelMapper;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    CategoryRepository categoryRepository;
-
-    @Autowired
-    ProductRepository productRepository;
-
-    final static String ROLE_ADMIN = "ROLE_ADMIN";
-    final static String ROLE_CUSTOMER = "ROLE_CUSTOMER";
-    final static String ROLE_SELLER = "ROLE_SELLER";
+    final CustomerRepository customerRepository;
+    final UserRepository userRepository;
+    final SellerRepository sellerRepository;
+    final EmailSenderService emailSenderService;
+    final Utils utils;
+    final FileUploadService fileUploadService;
+    final JWTService JWTService;
+    final ModelMapper modelMapper;
+    final PasswordEncoder passwordEncoder;
+    final CategoryRepository categoryRepository;
+    final ProductRepository productRepository;
 
     @Override
-    public ResponseHandler<UserDTO> addAdmin(AdminSaveCO adminSaveCO, MultipartFile image) throws IOException, GlobalException {
+    public ResponseHandler<UserDTO> addAdmin(UserSaveCO adminSaveCO, MultipartFile image) throws IOException, GlobalException {
 
         if (!adminSaveCO.getPassword().equals(adminSaveCO.getConfirmPassword())) {
             return new ResponseHandler<>(AppResponse.CONFIRM_PASSWORD_MISMATCH);
         }
 
-        if (ApplicationConstants.MASTER_ADMIN.getData().equals(adminSaveCO.getEmail())) {
+        if (AppData.MASTER_ADMIN.getData().equals(adminSaveCO.getEmail())) {
             return new ResponseHandler<>(AppResponse.USER_ALREADY_EXIST);
         }
 
@@ -97,12 +70,12 @@ public class AdminServiceImpl implements AdminService {
         user = modelMapper.map(adminSaveCO, User.class);
 
         GrantedAuthorityImpl grantedAuthority = new GrantedAuthorityImpl();
-        grantedAuthority.setAuthority(ROLE_ADMIN);
+        grantedAuthority.setAuthority(AppConstants.ROLE_ADMIN);
         user.setGrantedAuthorities(Collections.singletonList(grantedAuthority));
 
-        user.setAddress(Arrays.asList(adminSaveCO.getAddress()));
+        user.setAddresses(Arrays.asList(adminSaveCO.getAddress()));
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
         user.setIsActive(true);
         userRepository.save(user);
 
@@ -136,7 +109,7 @@ public class AdminServiceImpl implements AdminService {
             }
             String sort = filter.get("sort");
             String order = filter.get("order");
-            Pageable pageable = helperMethods.filterResultPageable(max, offset, sort, order);
+            Pageable pageable = utils.filterResultPageable(max, offset, sort, order);
             Page<Customer> customerPage = customerRepository.findAll(pageable);
             if (customerPage.getContent().size() == 0) {
                 return new ResponseHandler(AppResponse.PAGE_NOT_FOUND);
@@ -171,7 +144,7 @@ public class AdminServiceImpl implements AdminService {
             }
             String sort = filter.get("sort");
             String order = filter.get("order");
-            Pageable pageable = helperMethods.filterResultPageable(max, offset, sort, order);
+            Pageable pageable = utils.filterResultPageable(max, offset, sort, order);
             Page<Seller> sellerPage = sellerRepository.findAll(pageable);
             if (sellerPage.getContent().size() == 0) {
                 return new ResponseHandler(AppResponse.PAGE_NOT_FOUND);
@@ -189,13 +162,13 @@ public class AdminServiceImpl implements AdminService {
     public ResponseHandler activateUser(String token, Long id, String userType) {
         String jwtToken = token.substring(7);
 
-        if (userType.equals(ROLE_CUSTOMER)) {
+        if (userType.equals(AppConstants.ROLE_CUSTOMER)) {
             Optional<Customer> customer = customerRepository.findById(id);
             if (!customer.isPresent()) {
                 return new ResponseHandler(AppResponse.USER_NOT_FOUND);
             }
         }
-        if (userType.equals(ROLE_SELLER)) {
+        if (userType.equals(AppConstants.ROLE_SELLER)) {
             Optional<Seller> sellerOptional = sellerRepository.findById(id);
             if (!sellerOptional.isPresent()) {
                 return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -207,10 +180,10 @@ public class AdminServiceImpl implements AdminService {
         }
         User user = userOptional.get();
 
-        String loggedInAdminEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String loggedInAdminEmail = JWTService.getUsernameFromToken(jwtToken);
         if (user.getGrantedAuthorities().stream()
-                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(ROLE_ADMIN))) {
-            if (!ApplicationConstants.MASTER_ADMIN.getData().equals(loggedInAdminEmail)) {
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(AppConstants.ROLE_ADMIN))) {
+            if (!AppData.MASTER_ADMIN.getData().equals(loggedInAdminEmail)) {
                 return new ResponseHandler(AppResponse.NOT_A_MASTER_ADMIN);
             }
         }
@@ -232,13 +205,13 @@ public class AdminServiceImpl implements AdminService {
     public ResponseHandler deActivateUser(String token, Long id, String userType) {
         String jwtToken = token.substring(7);
 
-        if (userType.equals(ROLE_CUSTOMER)) {
+        if (userType.equals(AppConstants.ROLE_CUSTOMER)) {
             Optional<Customer> customer = customerRepository.findById(id);
             if (!customer.isPresent()) {
                 return new ResponseHandler(AppResponse.USER_NOT_FOUND);
             }
         }
-        if (userType.equals(ROLE_SELLER)) {
+        if (userType.equals(AppConstants.ROLE_SELLER)) {
             Optional<Seller> sellerOptional = sellerRepository.findById(id);
             if (!sellerOptional.isPresent()) {
                 return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -250,10 +223,10 @@ public class AdminServiceImpl implements AdminService {
         }
         User user = userOptional.get();
 
-        String loggedInAdminEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String loggedInAdminEmail = JWTService.getUsernameFromToken(jwtToken);
         if (user.getGrantedAuthorities().stream()
-                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(ROLE_ADMIN))) {
-            if (!ApplicationConstants.MASTER_ADMIN.getData().equals(loggedInAdminEmail)) {
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(AppConstants.ROLE_ADMIN))) {
+            if (!AppData.MASTER_ADMIN.getData().equals(loggedInAdminEmail)) {
                 return new ResponseHandler(AppResponse.NOT_A_MASTER_ADMIN);
             }
         }
@@ -279,7 +252,7 @@ public class AdminServiceImpl implements AdminService {
             return new ResponseHandler(AppResponse.PRODUCT_NOT_FOUND);
         }
         Product product = optionalProduct.get();
-        ProductDTO productDTO = helperMethods.convertToProductDTOS(Arrays.asList(product)).get(0);
+        ProductDTO productDTO = utils.convertToProductDTOS(Arrays.asList(product)).get(0);
         return new ResponseHandler(productDTO, AppResponse.OK);
     }
 
@@ -295,7 +268,7 @@ public class AdminServiceImpl implements AdminService {
             saveCO.setSort(null);
             productAdminFilter = saveCO;
         }
-        Pageable pageable = helperMethods.filterResultPageable(productAdminFilter.getMax(),
+        Pageable pageable = utils.filterResultPageable(productAdminFilter.getMax(),
                 productAdminFilter.getOffset(),
                 productAdminFilter.getSort(),
                 productAdminFilter.getOrder());
@@ -333,7 +306,7 @@ public class AdminServiceImpl implements AdminService {
             }
             resultProductList.addAll(productList.getContent());
         }
-        List<ProductDTO> productDTOS = helperMethods.convertToProductDTOS(resultProductList);
+        List<ProductDTO> productDTOS = utils.convertToProductDTOS(resultProductList);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 

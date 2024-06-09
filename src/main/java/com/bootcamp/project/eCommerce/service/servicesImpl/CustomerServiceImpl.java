@@ -1,15 +1,14 @@
 package com.bootcamp.project.eCommerce.service.servicesImpl;
 
-import com.bootcamp.project.eCommerce.HelperMethods;
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.*;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.*;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.CustomerProductFilter;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.CustomerSimilarProductFilter;
-import com.bootcamp.project.eCommerce.constants.FileFor;
-import com.bootcamp.project.eCommerce.constants.TokenType;
+import com.bootcamp.project.eCommerce.constants.AppConstants;
+import com.bootcamp.project.eCommerce.constants.AppData;
 import com.bootcamp.project.eCommerce.constants.AppResponse;
-import com.bootcamp.project.eCommerce.constants.ApplicationConstants;
+import com.bootcamp.project.eCommerce.constants.TokenType;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
 import com.bootcamp.project.eCommerce.pojos.productFlow.Product;
 import com.bootcamp.project.eCommerce.pojos.productFlow.ProductVariation;
@@ -19,14 +18,15 @@ import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.GrantedAuthorityImpl;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.User;
 import com.bootcamp.project.eCommerce.repos.*;
-import com.bootcamp.project.eCommerce.security.TokenUtil;
+import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
 import com.bootcamp.project.eCommerce.service.services.CustomerService;
+import com.bootcamp.project.eCommerce.utils.Utils;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,54 +36,29 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerServiceImpl implements CustomerService {
 
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    ModelMapper modelMapper;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    EmailSenderService emailSenderService;
-
-    @Autowired
-    TokenUtil tokenUtil;
-
-    @Autowired
-    CustomerRepository customerRepository;
-
-    @Autowired
-    CategoryRepository categoryRepository;
-
-    @Autowired
-    HelperMethods helperMethods;
-
-    @Autowired
-    AddressRepository addressRepository;
-
-    @Autowired
-    FileUploadService fileUploadService;
-
-    @Autowired
-    ProductRepository productRepository;
-
-    @Autowired
-    AuthorizationTokenRepository tokenRepository;
-
-    final static String ROLE_CUSTOMER = "ROLE_CUSTOMER";
+    final UserRepository userRepository;
+    final ModelMapper modelMapper;
+    final PasswordEncoder passwordEncoder;
+    final EmailSenderService emailSenderService;
+    final JWTService jwtService;
+    final CustomerRepository customerRepository;
+    final CategoryRepository categoryRepository;
+    final Utils utils;
+    final AddressRepository addressRepository;
+    final FileUploadService fileUploadService;
+    final ProductRepository productRepository;
 
     @Override
-    public ResponseHandler<UserDTO> addCustomer(CustomerSaveCO customerSaveCO, MultipartFile image) throws Exception {
+    public ResponseHandler<UserDTO> addCustomer(UserSaveCO customerSaveCO, MultipartFile image) throws Exception {
 
         if (!customerSaveCO.getPassword().equals(customerSaveCO.getConfirmPassword())) {
             return new ResponseHandler<>(AppResponse.CONFIRM_PASSWORD_MISMATCH);
         }
-        if (ApplicationConstants.MASTER_ADMIN.getData().equals(customerSaveCO.getEmail())) {
+        if (AppData.MASTER_ADMIN.getData().equals(customerSaveCO.getEmail())) {
             return new ResponseHandler<>(AppResponse.USER_ALREADY_EXIST);
         }
 
@@ -95,18 +70,18 @@ public class CustomerServiceImpl implements CustomerService {
         Customer customer = modelMapper.map(customerSaveCO, Customer.class);
 
         GrantedAuthorityImpl grantedAuthority = new GrantedAuthorityImpl();
-        grantedAuthority.setAuthority(ROLE_CUSTOMER);
+        grantedAuthority.setAuthority(AppConstants.ROLE_CUSTOMER);
         customer.setGrantedAuthorities(Collections.singletonList(grantedAuthority));
 
-        customer.setAddress(Arrays.asList(customerSaveCO.getAddress()));
+        customer.setAddresses(Arrays.asList(customerSaveCO.getAddress()));
 
         String username = customer.getEmail();
-        String password = customer.getPassword();
+        String password = customer.getPasswordHash();
 
-        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+        customer.setPasswordHash(passwordEncoder.encode(customer.getPasswordHash()));
 
-        String token = tokenUtil.generateToken(customer, TokenType.ACTIVATION_TOKEN);
-        customer.setAuthorizationToken(tokenUtil.convertTokenToAuthTokenObject(token));
+        String token = jwtService.generateToken(customer, TokenType.ACTIVATION_TOKEN);
+        customer.setAuthorizationToken(token);
         userRepository.save(customer);
 
         User savedUser = userRepository.findByEmail(customer.getEmail());
@@ -122,7 +97,7 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseHandler activateCustomer(String token) {
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
 
         User user = userRepository.findByEmail(userEmail);
         if (user == null) {
@@ -131,10 +106,6 @@ public class CustomerServiceImpl implements CustomerService {
         if (!user.getIsActive()) {
             return new ResponseHandler(AppResponse.ACCOUNT_DISABLE);
         }
-
-//        if (user.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(user.getAuthorizationToken().getToken());
-//        }
         user.setIsActive(true);
         user.setAuthorizationToken(null);
         userRepository.save(user);
@@ -157,12 +128,8 @@ public class CustomerServiceImpl implements CustomerService {
         if (user.getIsActive()) {
             return new ResponseHandler(AppResponse.ACCOUNT_ALREADY_ACTIVE);
         }
-
-//        if (user.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(user.getAuthorizationToken().getToken());
-//        }
-        String token = tokenUtil.generateToken(user, TokenType.ACTIVATION_TOKEN);
-        user.setAuthorizationToken(tokenUtil.convertTokenToAuthTokenObject(token));
+        String token = jwtService.generateToken(user, TokenType.ACTIVATION_TOKEN);
+        user.setAuthorizationToken(token);
         userRepository.save(user);
 
         emailSenderService.sendSimpleEmail(user.getEmail(),
@@ -176,7 +143,7 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseHandler<UserDTO> getCustomer(String token) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(username);
 
         if (customer == null) {
@@ -190,13 +157,13 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseHandler getAddresses(String token) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(username);
 
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        List<Address> addresses = customer.getAddress();
+        List<Address> addresses = customer.getAddresses();
         return new ResponseHandler<>(addresses, AppResponse.OK);
     }
 
@@ -204,13 +171,13 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseHandler updateProfile(String token, UpdateCustomerProfileSaveCO updateCustomerProfileSaveCO) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(username);
 
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        helperMethods.copyNonNullProperties(updateCustomerProfileSaveCO, customer);
+        utils.copyNonNullProperties(updateCustomerProfileSaveCO, customer);
         customerRepository.save(customer);
 
         return new ResponseHandler(AppResponse.PROFILE_UPDATED);
@@ -220,7 +187,7 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseHandler resetPassword(String token, ResetPasswordSaveCO resetPasswordSaveCO) {
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(userEmail);
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -230,15 +197,12 @@ public class CustomerServiceImpl implements CustomerService {
             return new ResponseHandler<>(AppResponse.CONFIRM_PASSWORD_MISMATCH);
         }
 
-        if (passwordEncoder.matches(resetPasswordSaveCO.getPassword(), customer.getPassword())) {
+        if (passwordEncoder.matches(resetPasswordSaveCO.getPassword(), customer.getPasswordHash())) {
             return new ResponseHandler<>(AppResponse.PASSWORD_CANNOT_BE_SAME_AS_PREVIOUS);
         }
 
-//        if (customer.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(customer.getAuthorizationToken().getToken());
-//        }
         customer.setAuthorizationToken(null);
-        customer.setPassword(passwordEncoder.encode(resetPasswordSaveCO.getPassword()));
+        customer.setPasswordHash(passwordEncoder.encode(resetPasswordSaveCO.getPassword()));
         customerRepository.save(customer);
 
         emailSenderService.sendSimpleEmail(customer.getEmail(),
@@ -252,13 +216,13 @@ public class CustomerServiceImpl implements CustomerService {
     public ResponseHandler addAddress(String token, Address address) {
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(userEmail);
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
 
-        List<Address> addressList = customer.getAddress();
+        List<Address> addressList = customer.getAddresses();
 
         for (Address addr : addressList) {
             if (address.equals(addr)) {
@@ -266,7 +230,7 @@ public class CustomerServiceImpl implements CustomerService {
             }
         }
         addressList.add(address);
-        customer.setAddress(addressList);
+        customer.setAddresses(addressList);
 
         customerRepository.save(customer);
         return new ResponseHandler(AppResponse.ADDRESS_ADDED);
@@ -282,12 +246,12 @@ public class CustomerServiceImpl implements CustomerService {
         }
         Address address = addressOptional.get();
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(userEmail);
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        if (!customer.getId().equals(address.getUser().getId())) {
+        if (!customer.doesContainsAddress(address)) {
             return new ResponseHandler(AppResponse.ADDRESS_NOT_FOUND);
         }
 
@@ -307,16 +271,16 @@ public class CustomerServiceImpl implements CustomerService {
         Address address = optionalAddress.get();
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
         Customer customer = customerRepository.findByEmail(userEmail);
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        if (!customer.getId().equals(address.getUser().getId())) {
+        if (!customer.doesContainsAddress(address)) {
             return new ResponseHandler(AppResponse.ADDRESS_NOT_FOUND);
         }
 
-        helperMethods.copyNonNullProperties(addressSaveCO, address);
+        utils.copyNonNullProperties(addressSaveCO, address);
         addressRepository.save(address);
 
         return new ResponseHandler(AppResponse.ADDRESS_UPDATED);
@@ -338,7 +302,7 @@ public class CustomerServiceImpl implements CustomerService {
                     rootCategoryList.add(category);
                 }
             }
-            categoryDTOS = helperMethods.convertToCategoryDTOList(rootCategoryList);
+            categoryDTOS = utils.convertToCategoryDTOList(rootCategoryList);
         } else {
 
             Optional<Category> optionalCategory = categoryRepository.findById(categoryId);
@@ -350,7 +314,7 @@ public class CustomerServiceImpl implements CustomerService {
                 return new ResponseHandler(AppResponse.CHILD_CATEGORY_NOT_FOUND);
             }
             List<Category> immediateChildOfPassedCategory = new ArrayList<>(passedCategory.getChildCategories());
-            categoryDTOS = helperMethods.convertToCategoryDTOList(immediateChildOfPassedCategory);
+            categoryDTOS = utils.convertToCategoryDTOList(immediateChildOfPassedCategory);
         }
         return new ResponseHandler(categoryDTOS, AppResponse.OK);
     }
@@ -364,7 +328,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
         Category category = optionalCategory.get();
         List<FieldValueDTO> fieldValueDTOS =
-                helperMethods.convertToCategoryDTOList(Arrays.asList(category)).get(0)
+                utils.convertToCategoryDTOList(Arrays.asList(category)).get(0)
                         .getFieldAndValues();
 
         List<Product> productList = productRepository.findAllByCategory(category);
@@ -387,10 +351,10 @@ public class CustomerServiceImpl implements CustomerService {
                     minPrice = productVariation.getPrice();
                 }
             }
-            if (maxPrice == Integer.MIN_VALUE){
+            if (maxPrice == Integer.MIN_VALUE) {
                 maxPrice = 0;
             }
-            if (minPrice == Integer.MAX_VALUE){
+            if (minPrice == Integer.MAX_VALUE) {
                 minPrice = 0;
             }
             mAndMinProduct.setMaximumPrice(maxPrice);
@@ -424,7 +388,7 @@ public class CustomerServiceImpl implements CustomerService {
             return new ResponseHandler(AppResponse.VARIATION_NOT_FOUND);
         }
 
-        ProductDTO productDTO = helperMethods.convertToProductDTOS(Arrays.asList(product)).get(0);
+        ProductDTO productDTO = utils.convertToProductDTOS(Arrays.asList(product)).get(0);
         return new ResponseHandler(productDTO, AppResponse.OK);
     }
 
@@ -441,7 +405,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         List<Product> resultProductList = new ArrayList<>();
-        Pageable pageable = helperMethods.filterResultPageable(customerProductFilter.getMax(),
+        Pageable pageable = utils.filterResultPageable(customerProductFilter.getMax(),
                 customerProductFilter.getOffset(),
                 customerProductFilter.getSort(),
                 customerProductFilter.getOrder());
@@ -487,7 +451,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (nonDeletedActiveProduct == null) {
             return new ResponseHandler(AppResponse.PRODUCT_LIST_NOT_FOUND);
         }
-        List<ProductDTO> productDTOS = helperMethods.convertToProductDTOS(nonDeletedActiveProduct);
+        List<ProductDTO> productDTOS = utils.convertToProductDTOS(nonDeletedActiveProduct);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 
@@ -505,7 +469,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (product.getIsDeleted()) {
             return new ResponseHandler(AppResponse.PRODUCT_DELETED);
         }
-        Pageable pageable = helperMethods.filterResultPageable(customerSimilarProductFilter.getMax(),
+        Pageable pageable = utils.filterResultPageable(customerSimilarProductFilter.getMax(),
                 customerSimilarProductFilter.getOffset(),
                 customerSimilarProductFilter.getSort(),
                 customerSimilarProductFilter.getOrder());
@@ -522,7 +486,7 @@ public class CustomerServiceImpl implements CustomerService {
             productList = Collections.singletonList(optionalProduct.get());
         }
 
-        List<ProductDTO> productDTOS = helperMethods.convertToProductDTOS(productList);
+        List<ProductDTO> productDTOS = utils.convertToProductDTOS(productList);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 }

@@ -1,14 +1,12 @@
 package com.bootcamp.project.eCommerce.co_dto.saveCO;
 
-import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Pattern;
 
 @Getter
 @Setter

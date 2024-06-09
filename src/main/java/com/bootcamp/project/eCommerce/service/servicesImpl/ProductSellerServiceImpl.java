@@ -1,11 +1,12 @@
 package com.bootcamp.project.eCommerce.service.servicesImpl;
 
-import com.bootcamp.project.eCommerce.HelperMethods;
 import com.bootcamp.project.eCommerce.ResponseHandler;
-import com.bootcamp.project.eCommerce.co_dto.dto.*;
+import com.bootcamp.project.eCommerce.co_dto.dto.ProductDTO;
+import com.bootcamp.project.eCommerce.co_dto.dto.ProductVariationDTO;
+import com.bootcamp.project.eCommerce.co_dto.dto.SupportingProductDTO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.*;
+import com.bootcamp.project.eCommerce.constants.AppData;
 import com.bootcamp.project.eCommerce.constants.AppResponse;
-import com.bootcamp.project.eCommerce.constants.ApplicationConstants;
 import com.bootcamp.project.eCommerce.constants.FileFor;
 import com.bootcamp.project.eCommerce.pojos.productFlow.Product;
 import com.bootcamp.project.eCommerce.pojos.productFlow.ProductVariation;
@@ -14,16 +15,17 @@ import com.bootcamp.project.eCommerce.pojos.productFlow.category.CategoryMetadat
 import com.bootcamp.project.eCommerce.pojos.productFlow.category.CategoryMetadataFieldValue;
 import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
 import com.bootcamp.project.eCommerce.repos.*;
-import com.bootcamp.project.eCommerce.security.TokenUtil;
+import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
 import com.bootcamp.project.eCommerce.service.services.Product_SellerService;
+import com.bootcamp.project.eCommerce.utils.Utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,41 +34,21 @@ import java.io.IOException;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductSellerServiceImpl implements Product_SellerService {
 
-    @Autowired
-    CategoryRepository categoryRepository;
-
-    @Autowired
-    ProductRepository productRepository;
-
-    @Autowired
-    ModelMapper modelMapper;
-
-    @Autowired
-    TokenUtil tokenUtil;
-
-    @Autowired
-    SellerRepository sellerRepository;
-
-    @Autowired
-    EmailSenderService emailSenderService;
-
-    @Autowired
-    CategoryMetadataFieldValueRepository fieldValueRepository;
-
-    @Autowired
-    ProductVariationRepository variationRepository;
-
-    @Autowired
-    CategoryMetadataFieldRepository fieldRepository;
-
-    @Autowired
-    HelperMethods helperMethods;
-
-    @Autowired
-    FileUploadService fileUploadService;
+    final CategoryRepository categoryRepository;
+    final ProductRepository productRepository;
+    final ModelMapper modelMapper;
+    final JWTService JWTService;
+    final SellerRepository sellerRepository;
+    final EmailSenderService emailSenderService;
+    final CategoryMetadataFieldValueRepository fieldValueRepository;
+    final ProductVariationRepository variationRepository;
+    final CategoryMetadataFieldRepository fieldRepository;
+    final Utils utils;
+    final FileUploadService fileUploadService;
 
     @Override
     public ResponseHandler addProduct(String token, ProductSaveCO productSaveCO) {
@@ -80,7 +62,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             return new ResponseHandler(AppResponse.CATEGORY_SHOULD_BE_LEAF_NODE);
         }
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -96,7 +78,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
         product.setSeller(seller);
         productRepository.save(product);
 
-        emailSenderService.sendSimpleEmail(ApplicationConstants.MASTER_ADMIN.getData(),
+        emailSenderService.sendSimpleEmail(AppData.MASTER_ADMIN.getData(),
                 "New Product with name " + product.getName() +
                         " is added By Seller With id " + seller.getId() +
                         ".\n Activate The Product using this Id",
@@ -110,7 +92,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     @Override
     public ResponseHandler addProductVariation(String token, ProductVariationSaveCO productVariationSaveCO) throws IOException {
 
-        ResponseHandler responseHandler = helperMethods.validateImage(productVariationSaveCO.getPrimaryImage());
+        ResponseHandler responseHandler = utils.validateImage(productVariationSaveCO.getPrimaryImage());
         if (responseHandler.getStatusCode() != 200) {
             return responseHandler;
         }
@@ -149,7 +131,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler getProduct(String token, Long id) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -167,7 +149,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             return new ResponseHandler(AppResponse.PRODUCT_NOT_FOUND);
         }
 
-        ProductDTO productDTO = helperMethods.convertToProductDTOS(Arrays.asList(product)).get(0);
+        ProductDTO productDTO = utils.convertToProductDTOS(Arrays.asList(product)).get(0);
         return new ResponseHandler(productDTO, AppResponse.OK);
     }
 
@@ -175,7 +157,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler getProductVariation(String token, Long id) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -211,7 +193,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler getAllProduct(String token, FilterSaveCO filterSaveCO) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -225,7 +207,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             saveCO.setSort(null);
             filterSaveCO = saveCO;
         }
-        Pageable pageable = helperMethods.filterResultPageable(filterSaveCO.getMax(),
+        Pageable pageable = utils.filterResultPageable(filterSaveCO.getMax(),
                 filterSaveCO.getOffset(),
                 filterSaveCO.getSort(),
                 filterSaveCO.getOrder());
@@ -233,7 +215,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
         if (productList.size() == 0) {
             return new ResponseHandler(AppResponse.PRODUCT_LIST_NOT_FOUND);
         }
-        List<ProductDTO> productDTOS = helperMethods.convertToProductDTOS(productList);
+        List<ProductDTO> productDTOS = utils.convertToProductDTOS(productList);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 
@@ -241,7 +223,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler getAllProductVariation(String token, Long productId, FilterSaveCO filterSaveCO) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -269,7 +251,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             saveCO.setSort(null);
             filterSaveCO = saveCO;
         }
-        Pageable pageable = helperMethods.filterResultPageable(filterSaveCO.getMax(),
+        Pageable pageable = utils.filterResultPageable(filterSaveCO.getMax(),
                 filterSaveCO.getOffset(),
                 filterSaveCO.getSort(),
                 filterSaveCO.getOrder());
@@ -294,7 +276,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler deleteProduct(String token, Long id) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -320,7 +302,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler updateProduct(String token, ProductUpdateSaveCO productUpdateSaveCO) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -339,7 +321,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
         if (!isNameUnique(productUpdateSaveCO.getName(), product.getBrand(), product.getCategory(), seller)) {
             return new ResponseHandler(AppResponse.PRODUCT_NAME_IN_USE);
         }
-        helperMethods.copyNonNullProperties(productUpdateSaveCO, product);
+        utils.copyNonNullProperties(productUpdateSaveCO, product);
         productRepository.save(product);
         return new ResponseHandler(AppResponse.PRODUCT_UPDATED);
     }
@@ -348,7 +330,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     public ResponseHandler updateProductVariation(String token, VariationUpdateSaveCO variationUpdateSaveCO) throws IOException {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = JWTService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -373,7 +355,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
                 return responseHandler;
             }
         }
-        helperMethods.copyNonNullProperties(variationUpdateSaveCO, productVariation);
+        utils.copyNonNullProperties(variationUpdateSaveCO, productVariation);
 
         if (variationUpdateSaveCO.getPrimaryImage() != null) {
             String extension = variationUpdateSaveCO.getPrimaryImage().getContentType().substring(variationUpdateSaveCO.getPrimaryImage().getContentType().lastIndexOf("/") + 1);
@@ -434,7 +416,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             Long fieldId = metadataField.getMetadataFieldValueID().getMetadataFieldId();
             CategoryMetadataField field = fieldRepository.findById(fieldId).get();
             fieldNames.add(field.getName());
-            fieldValues.put(field.getName(), metadataField.getValues_());
+            fieldValues.put(field.getName(), metadataField.getValue());
         }
 
         for (String key : metadataMap.keySet()) {

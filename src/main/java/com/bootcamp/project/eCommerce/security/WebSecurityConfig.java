@@ -1,44 +1,63 @@
 package com.bootcamp.project.eCommerce.security;
 
+import com.bootcamp.project.eCommerce.service.servicesImpl.UserDetailsServiceImpl;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
+@EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig {
 
-    @Autowired
-    TokenAuthenticationEntryPoint tokenAuthenticationEntryPoint;
+    final TokenAuthenticationEntryPoint tokenAuthenticationEntryPoint;
+    final CustomRequestFilter customRequestFilter;
+    final UserDetailsServiceImpl userDetailsService;
 
-    @Autowired
-    UserDetailsService jwtUserDetailsService;
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests((requests) -> requests
+                        .requestMatchers("/register/**",
+                                "/session/login",
+                                "/session/reset/password/link").anonymous()
+                        .requestMatchers("/session/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/session/seller",
+                                "/session/seller/**").hasRole("SELLER")
+                        .requestMatchers("/session/customer",
+                                "/session/customer/**").hasRole("CUSTOMER")
+                        .requestMatchers("/session/logout",
+                                "/session/reset/password").hasAnyRole("ADMIN", "CUSTOMER", "SELLER")
+                        .anyRequest().authenticated()
+                )
+                .exceptionHandling(exceptionHandling ->
+                        exceptionHandling.authenticationEntryPoint(tokenAuthenticationEntryPoint)
+                )
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
 
-    @Autowired
-    CustomRequestFilter customRequestFilter;
+        http.addFilterBefore(customRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-    final static String ROLE_CUSTOMER = "CUSTOMER";
-    final static String ROLE_SELLER = "SELLER";
-    final static String ROLE_ADMIN = "ADMIN";
-
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(jwtUserDetailsService).passwordEncoder(passwordEncoder());
+        return http.build();
     }
 
     @Bean
@@ -47,38 +66,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    @Override
-    public AuthenticationManager authenticationManagerBean() throws Exception {
-        return super.authenticationManagerBean();
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
+        authenticationProvider.setUserDetailsService(userDetailsService);
+        authenticationProvider.setPasswordEncoder(passwordEncoder());
+        return authenticationProvider;
+
     }
 
-
-    @Override
-    protected void configure(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.csrf().disable()
-                .authorizeRequests()
-
-                .antMatchers("/register/*",
-                        "/session/login",
-                        "/session/reset/password/link").anonymous()
-
-                .antMatchers("/session/admin/*").hasRole(ROLE_ADMIN)
-
-                .antMatchers("/session/seller",
-                        "/session/seller/*").hasRole(ROLE_SELLER)
-
-                .antMatchers("/session/customer",
-                        "/session/customer/*").hasRole(ROLE_CUSTOMER)
-
-                .antMatchers("/session/logout",
-                        "/session/reset/password").hasAnyRole(ROLE_ADMIN,
-                        ROLE_CUSTOMER,
-                        ROLE_SELLER)
-
-                .and().exceptionHandling()
-                .authenticationEntryPoint(tokenAuthenticationEntryPoint)
-                .and().sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        httpSecurity.addFilterBefore(customRequestFilter, UsernamePasswordAuthenticationFilter.class);
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }

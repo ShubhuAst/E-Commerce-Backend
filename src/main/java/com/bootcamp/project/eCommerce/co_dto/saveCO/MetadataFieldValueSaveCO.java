@@ -1,13 +1,11 @@
 package com.bootcamp.project.eCommerce.co_dto.saveCO;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-
-import javax.validation.constraints.NotNull;
-import java.util.List;
 
 @Getter
 @Setter

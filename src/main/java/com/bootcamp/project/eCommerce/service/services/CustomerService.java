@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface CustomerService {
 
-    ResponseHandler<UserDTO> addCustomer(CustomerSaveCO customerSaveCO, MultipartFile image) throws Exception;
+    ResponseHandler<UserDTO> addCustomer(UserSaveCO customerSaveCO, MultipartFile image) throws Exception;
 
     ResponseHandler activateCustomer(String token);
 

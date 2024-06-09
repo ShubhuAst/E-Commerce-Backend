@@ -2,24 +2,26 @@ package com.bootcamp.project.eCommerce.pojos.productFlow;
 
 import com.bootcamp.project.eCommerce.pojos.orderFlow.Cart;
 import com.bootcamp.project.eCommerce.pojos.orderFlow.OrderProduct;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductVariation {
+public class ProductVariation implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -5387458971183104967L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,6 +46,9 @@ public class ProductVariation {
 
     @OneToMany(mappedBy = "productVariation", cascade = CascadeType.ALL)
     List<Cart> carts;
+
+    @Version
+    Long version;
 
     public void setOrderProduct(OrderProduct orderProduct) {
 

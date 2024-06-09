@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public enum FileFor {
 
-    USER_FILE("/user/","/images/defaults/product.jpeg"),
-    PRODUCT_FILE("/product/","/images/defaults/product.jpeg"),
-    PRODUCT_VARIATION_FILE("/productVariation/","/images/defaults/product.jpeg");
+    USER_FILE("/user/", "/images/defaults/product.jpeg"),
+    PRODUCT_FILE("/product/", "/images/defaults/product.jpeg"),
+    PRODUCT_VARIATION_FILE("/productVariation/", "/images/defaults/product.jpeg");
 
     private String path;
     private String defaultImagePath;

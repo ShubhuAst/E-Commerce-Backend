@@ -1,19 +1,11 @@
 package com.bootcamp.project.eCommerce.co_dto.saveCO;
 
-import com.bootcamp.project.eCommerce.pojos.productFlow.category.Category;
-import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.persistence.CascadeType;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.validation.constraints.NotNull;
 
 @Getter
 @Setter

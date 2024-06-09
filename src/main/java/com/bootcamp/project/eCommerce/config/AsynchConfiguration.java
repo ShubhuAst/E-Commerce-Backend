@@ -2,7 +2,7 @@ package com.bootcamp.project.eCommerce.config;
 
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.User;
 import com.bootcamp.project.eCommerce.repos.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -10,21 +10,18 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.time.Duration;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync
 @EnableScheduling
+@RequiredArgsConstructor
 public class AsynchConfiguration {
 
-    @Autowired
-    UserRepository userRepository;
+    final UserRepository userRepository;
 
     @Bean(name = "asyncExecutor")
     public Executor asyncExecutor() {
@@ -44,7 +41,7 @@ public class AsynchConfiguration {
 
         userList.forEach(user -> {
             LocalDate currentDate = LocalDate.now();
-            LocalDate passwordLastUpdated = user.getPassword_last_updated().toInstant()
+            LocalDate passwordLastUpdated = user.getPasswordLastUpdated().toInstant()
                     .atZone(ZoneId.systemDefault())
                     .toLocalDate();
             LocalDate lastUpdatedPlus90Days = passwordLastUpdated.plusDays(90);

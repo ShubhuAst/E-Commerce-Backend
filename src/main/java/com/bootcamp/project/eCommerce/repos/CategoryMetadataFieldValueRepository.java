@@ -5,11 +5,9 @@ import com.bootcamp.project.eCommerce.pojos.productFlow.category.CategoryMetadat
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
 public interface CategoryMetadataFieldValueRepository extends JpaRepository<CategoryMetadataFieldValue, CategoryMetadataFieldValueID> {
 
     @Query(nativeQuery = true, value = "select * from category_metadata_field_value where category_id = :categoryId")

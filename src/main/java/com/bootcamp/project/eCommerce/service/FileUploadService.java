@@ -27,7 +27,7 @@ public class FileUploadService {
 
     public void uploadFile(MultipartFile multipartFile, List<MultipartFile> secondaryFile, FileFor fileFor, Long id) throws IOException {
 
-        if (multipartFile.isEmpty()){
+        if (multipartFile.isEmpty()) {
             return;
         }
         String fileType = multipartFile.getContentType();
@@ -38,17 +38,17 @@ public class FileUploadService {
                                 File.separator +
                                 fileFor.getPath() +
                                 File.separator +
-                                id +"."+
-                        fileType.substring(fileType.lastIndexOf("/")+1)),
+                                id + "." +
+                                fileType.substring(fileType.lastIndexOf("/") + 1)),
                 StandardCopyOption.REPLACE_EXISTING);
     }
 
-    public String getPrimaryFile(FileFor fileFor, Long id, String fileExtension){
+    public String getPrimaryFile(FileFor fileFor, Long id, String fileExtension) {
 
-        String imagePath = UPLOAD_DIR + File.separator + fileFor.getPath() + File.separator + id+"."+fileExtension;
+        String imagePath = UPLOAD_DIR + File.separator + fileFor.getPath() + File.separator + id + "." + fileExtension;
         File file = new File(imagePath);
 
-        if (!file.exists()){
+        if (!file.exists()) {
             return ServletUriComponentsBuilder.fromCurrentContextPath().path(fileFor.getDefaultImagePath()).toUriString();
         }
         return ServletUriComponentsBuilder.fromCurrentContextPath().path(imagePath).toUriString();

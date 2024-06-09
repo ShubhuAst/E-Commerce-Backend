@@ -1,13 +1,14 @@
 package com.bootcamp.project.eCommerce.pojos.orderFlow;
 
 import com.bootcamp.project.eCommerce.constants.StatusType;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
 
 @Entity
@@ -17,7 +18,8 @@ import java.io.Serializable;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderStatus implements Serializable {
 
-    static final Long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = -1957751720485392952L;
 
     @Id
     @OneToOne(cascade = CascadeType.ALL)
@@ -25,10 +27,16 @@ public class OrderStatus implements Serializable {
     OrderProduct orderProduct;
 
     @Enumerated(EnumType.STRING)
-    StatusType fromStatus;
+    @Column(columnDefinition = "varchar(255)")
+    StatusType oldStatus;
 
     @Enumerated(EnumType.STRING)
-    StatusType toStatus;
+    @Column(columnDefinition = "varchar(255)")
+    StatusType currentStatus;
 
     String transitionNoteComments;
+
+    @Version
+    Long version;
+
 }

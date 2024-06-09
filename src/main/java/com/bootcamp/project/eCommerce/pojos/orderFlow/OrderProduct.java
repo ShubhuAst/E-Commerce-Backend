@@ -1,22 +1,25 @@
 package com.bootcamp.project.eCommerce.pojos.orderFlow;
 
 import com.bootcamp.project.eCommerce.pojos.productFlow.ProductVariation;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
-import java.util.UUID;
+import java.io.Serial;
+import java.io.Serializable;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderProduct {
+public class OrderProduct implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -473255030091659794L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,7 +27,7 @@ public class OrderProduct {
 
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "order_id")
-    Order_ order;
+    Order order;
 
     Integer quantity;
 
@@ -36,6 +39,9 @@ public class OrderProduct {
 
     @OneToOne(mappedBy = "orderProduct")
     OrderStatus orderStatus;
+
+    @Version
+    Long version;
 
     public void setOrderStatus(OrderStatus orderStatus) {
 

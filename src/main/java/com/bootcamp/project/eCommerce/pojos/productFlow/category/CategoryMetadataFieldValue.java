@@ -1,15 +1,15 @@
 package com.bootcamp.project.eCommerce.pojos.productFlow.category;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import java.io.Serial;
 import java.io.Serializable;
 
 @Entity
@@ -19,10 +19,14 @@ import java.io.Serializable;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryMetadataFieldValue implements Serializable {
 
-    static final Long serialVersionUID = 1L;
-    
+    @Serial
+    private static final long serialVersionUID = 8039523815973465300L;
+
     @EmbeddedId
     CategoryMetadataFieldValueID metadataFieldValueID;
 
-    String values_;
+    String value;
+
+    @Version
+    Long version;
 }

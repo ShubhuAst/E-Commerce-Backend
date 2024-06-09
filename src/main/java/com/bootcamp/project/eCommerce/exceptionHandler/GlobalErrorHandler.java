@@ -2,27 +2,21 @@ package com.bootcamp.project.eCommerce.exceptionHandler;
 
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
-import org.springframework.beans.TypeMismatchException;
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.ValidationException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 
 @RestController
 @ControllerAdvice
@@ -53,7 +47,7 @@ public class GlobalErrorHandler implements ErrorController {
 
     @ExceptionHandler(BindException.class)
     public final ResponseEntity<Object> handleBindException(BindException e,
-                                                                  WebRequest request) {
+                                                            WebRequest request) {
 
         Map<String, String> errors = new HashMap<>();
 

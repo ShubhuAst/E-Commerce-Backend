@@ -1,55 +1,43 @@
 package com.bootcamp.project.eCommerce.security;
 
-import java.io.IOException;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.constants.AppResponse;
 import com.bootcamp.project.eCommerce.constants.TokenType;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.User;
-import com.bootcamp.project.eCommerce.repos.AuthorizationTokenRepository;
 import com.bootcamp.project.eCommerce.repos.UserRepository;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.google.gson.Gson;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.AuthenticatedPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import io.jsonwebtoken.ExpiredJwtException;
+
+import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomRequestFilter extends OncePerRequestFilter {
 
-    @Autowired
-    UserDetailsService userDetailsService;
-
-    @Autowired
-    TokenUtil tokenUtil;
-
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    EmailSenderService emailSenderService;
-
-    @Autowired
-    AuthorizationTokenRepository tokenRepository;
+    final UserDetailsService userDetailsService;
+    final JWTService jwtService;
+    final UserRepository userRepository;
+    final EmailSenderService emailSenderService;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         final String requestTokenHeader = request.getHeader("Authorization");
         String username = null;
@@ -59,7 +47,7 @@ public class CustomRequestFilter extends OncePerRequestFilter {
             if (requestTokenHeader.startsWith("Bearer ")) {
                 jwtToken = requestTokenHeader.substring(7);
                 try {
-                    username = tokenUtil.getUsernameFromToken(jwtToken);
+                    username = jwtService.getUsernameFromToken(jwtToken);
                     setUpAuthentication(username, jwtToken, request, response);
                 } catch (IllegalArgumentException e) {
                     System.out.println("Unable to get JWT Token");
@@ -75,7 +63,7 @@ public class CustomRequestFilter extends OncePerRequestFilter {
         } else {
             logger.warn("Token is Null");
         }
-        chain.doFilter(request, response);
+        filterChain.doFilter(request, response);
     }
 
     private void setUpAuthentication(String username, String jwtToken, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -97,7 +85,7 @@ public class CustomRequestFilter extends OncePerRequestFilter {
                 setResponse(AppResponse.ACCOUNT_PASSWORD_EXPIRED, null, response);
             }
 
-            if (tokenUtil.validateToken(jwtToken, userDetails)) {
+            if (jwtService.validateToken(jwtToken, userDetails)) {
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 usernamePasswordAuthenticationToken
@@ -114,7 +102,7 @@ public class CustomRequestFilter extends OncePerRequestFilter {
 
     private void handleExpiredToken(Claims claims, HttpServletResponse response) throws IOException {
 
-        String tokenType = tokenUtil.getTokenTypeFromClaims(claims);
+        String tokenType = jwtService.getTokenTypeFromClaims(claims);
 
         if (TokenType.ACTIVATION_TOKEN.getKeyName().equals(tokenType) ||
                 TokenType.ACCESS_TOKEN.getKeyName().equals(tokenType) ||
@@ -128,15 +116,12 @@ public class CustomRequestFilter extends OncePerRequestFilter {
 
             String newToken = null;
             if (TokenType.ACTIVATION_TOKEN.getKeyName().equals(tokenType)) {
-                newToken = tokenUtil.generateToken(user, TokenType.ACTIVATION_TOKEN);
+                newToken = jwtService.generateToken(user, TokenType.ACTIVATION_TOKEN);
             } else {
-                newToken = tokenUtil.generateToken(user, TokenType.REFRESH_TOKEN);
+                newToken = jwtService.generateToken(user, TokenType.REFRESH_TOKEN);
             }
 
-//            if (user.getAuthorizationToken().getToken() != null){
-//                tokenRepository.deleteByToken(user.getAuthorizationToken().getToken());
-//            }
-            user.setAuthorizationToken(tokenUtil.convertTokenToAuthTokenObject(newToken));
+            user.setAuthorizationToken(newToken);
             userRepository.save(user);
 
             if (TokenType.ACTIVATION_TOKEN.getKeyName().equals(tokenType)) {

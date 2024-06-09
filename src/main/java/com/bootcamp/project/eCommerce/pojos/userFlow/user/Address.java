@@ -1,26 +1,28 @@
 package com.bootcamp.project.eCommerce.pojos.userFlow.user;
 
-import com.bootcamp.project.eCommerce.pojos.userFlow.Customer;
-import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
-import javax.validation.constraints.*;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Address {
+public class Address implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -8466613174178757997L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,16 +48,13 @@ public class Address {
     @NotNull(message = "Label Can't be Null")
     String label;
 
-    @JsonIgnore
-    @ManyToOne(cascade = CascadeType.PERSIST)
-    @JoinColumn(name = "user_id")
-    User user;
+    @Version
+    Long version;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Address)) return false;
-        Address address = (Address) o;
+        if (!(o instanceof Address address)) return false;
         return getCity().equals(address.getCity()) && getState().equals(address.getState()) && getCountry().equals(address.getCountry()) && getAddressLine().equals(address.getAddressLine()) && getZipCode().equals(address.getZipCode()) && getLabel().equals(address.getLabel());
     }
 

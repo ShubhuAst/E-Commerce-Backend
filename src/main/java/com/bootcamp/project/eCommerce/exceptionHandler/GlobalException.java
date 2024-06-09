@@ -2,11 +2,9 @@ package com.bootcamp.project.eCommerce.exceptionHandler;
 
 import com.bootcamp.project.eCommerce.constants.AppResponse;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @Builder

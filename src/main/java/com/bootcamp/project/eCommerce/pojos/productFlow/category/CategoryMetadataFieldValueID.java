@@ -1,9 +1,10 @@
 package com.bootcamp.project.eCommerce.pojos.productFlow.category;
 
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.JoinColumn;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
 import java.io.Serializable;
 
 @Getter

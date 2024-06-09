@@ -5,11 +5,9 @@ import com.bootcamp.project.eCommerce.pojos.productFlow.category.Category;
 import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findAllByBrand(String brand);
@@ -22,7 +20,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findAllBySeller(Seller seller);
 
-    List<Product> findAllBySellerAndIsDeleted(Seller seller,Boolean isDeleted ,Pageable pageable);
+    List<Product> findAllBySellerAndIsDeleted(Seller seller, Boolean isDeleted, Pageable pageable);
 
     List<Product> findAllByCategoryAndBrand(Category category, String brand, Pageable pageable);
 

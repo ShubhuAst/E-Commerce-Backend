@@ -1,19 +1,15 @@
 package com.bootcamp.project.eCommerce.pojos.userFlow.user;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Parameter;
 import org.springframework.security.core.GrantedAuthority;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import java.util.List;
-import java.util.UUID;
+import java.io.Serial;
 
 @Entity
 @Getter
@@ -23,6 +19,9 @@ import java.util.UUID;
 @Table(name = "role")
 public class GrantedAuthorityImpl implements GrantedAuthority {
 
+    @Serial
+    private static final long serialVersionUID = 6690834373789241583L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -30,9 +29,8 @@ public class GrantedAuthorityImpl implements GrantedAuthority {
     @NotNull(message = "Authority Can't be Null")
     String authority;
 
-    @JsonIgnore
-    @ManyToMany(mappedBy = "grantedAuthorities", cascade = CascadeType.ALL)
-    List<User> users;
+    @Version
+    Long version;
 
     @Override
     public String getAuthority() {

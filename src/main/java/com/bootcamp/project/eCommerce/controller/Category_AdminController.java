@@ -5,22 +5,21 @@ import com.bootcamp.project.eCommerce.co_dto.saveCO.MetadataFieldValueSaveCO;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
 import com.bootcamp.project.eCommerce.service.services.Category_AdminService;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequestMapping("/session/admin/category")
+@RequiredArgsConstructor
 public class Category_AdminController {
 
-    @Autowired
-    Category_AdminService categoryAdminService;
+    final Category_AdminService categoryAdminService;
 
     @PostMapping
     public ResponseEntity addCategory(@RequestParam String name,

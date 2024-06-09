@@ -1,29 +1,31 @@
 package com.bootcamp.project.eCommerce.pojos.orderFlow;
 
+import com.bootcamp.project.eCommerce.pojos.Auditable;
 import com.bootcamp.project.eCommerce.pojos.productFlow.ProductVariation;
 import com.bootcamp.project.eCommerce.pojos.userFlow.Customer;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-import javax.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
-import java.util.Date;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Cart implements Serializable {
+public class Cart extends Auditable implements Serializable {
 
-    static final Long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 3757467198331681898L;
 
     @MapsId
     @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "customer_user_id")
+    @JoinColumn(name = "customer_id")
     Customer customer;
 
     @Id
@@ -35,25 +37,6 @@ public class Cart implements Serializable {
 
     Boolean isWishlistItem = false;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    Date dateCreated;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    Date lastUpdated;
-
-    String createdBy;
-
-    String updatedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        dateCreated = new Date();
-        createdBy = customer.getEmail();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastUpdated = new Date();
-        updatedBy = customer.getEmail();
-    }
+    @Version
+    Long version;
 }

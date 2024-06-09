@@ -1,55 +1,38 @@
 package com.bootcamp.project.eCommerce.service.servicesImpl;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
-import com.bootcamp.project.eCommerce.constants.AppResponse;
-import com.bootcamp.project.eCommerce.constants.TokenType;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.LoginSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.ReSendTokenSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.ResetPasswordSaveCO;
+import com.bootcamp.project.eCommerce.constants.AppResponse;
+import com.bootcamp.project.eCommerce.constants.TokenType;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.User;
-import com.bootcamp.project.eCommerce.repos.AuthorizationTokenRepository;
 import com.bootcamp.project.eCommerce.repos.UserRepository;
-import com.bootcamp.project.eCommerce.security.TokenAuthentication;
-import com.bootcamp.project.eCommerce.security.TokenResponse;
-import com.bootcamp.project.eCommerce.security.TokenUtil;
+import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.services.LoginLogoutService;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class LoginLogoutServiceImpl implements LoginLogoutService {
 
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    TokenAuthentication tokenAuthentication;
-
-    @Autowired
-    ModelMapper modelMapper;
-
-    @Autowired
-    EmailSenderService emailSenderService;
-
-    @Autowired
-    AuthorizationTokenRepository tokenRepository;
-
-    @Autowired
-    TokenUtil tokenUtil;
+    final UserRepository userRepository;
+    final PasswordEncoder passwordEncoder;
+    final ModelMapper modelMapper;
+    final EmailSenderService emailSenderService;
+    final JWTService jwtService;
 
     @Override
-    public ResponseHandler<UserDTO> userLogin(LoginSaveCO loginSaveCO) throws Exception {
+    public ResponseHandler<UserDTO> userLogin(LoginSaveCO loginSaveCO) {
 
         User user = userRepository.findByEmail(loginSaveCO.getEmail());
         if (user == null) {
@@ -68,25 +51,20 @@ public class LoginLogoutServiceImpl implements LoginLogoutService {
             return new ResponseHandler<>(AppResponse.ACCOUNT_LOCKED);
         }
 
-        if (!passwordEncoder.matches(loginSaveCO.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(loginSaveCO.getPassword(), user.getPasswordHash())) {
             int attempt = user.getInvalidAttemptCount() + 1;
             user.setInvalidAttemptCount(attempt);
             userRepository.save(user);
             return ResponseHandler.<UserDTO>builder().msg("Invalid Password," + (3 - attempt) + " Attempt Left")
                     .statusCode(HttpStatus.FORBIDDEN.value()).build();
         }
-
-//        String oldToken = user.getAuthorizationToken().getToken();
-        TokenResponse tokenResponse = tokenAuthentication.createAuthenticationToken(loginSaveCO.getEmail(),
-                loginSaveCO.getPassword(), TokenType.ACCESS_TOKEN);
-        user.setAuthorizationToken(tokenUtil.convertTokenToAuthTokenObject(tokenResponse.getToken()));
+        String token = jwtService.generateToken(user, TokenType.ACCESS_TOKEN);
+        user.setAuthorizationToken(token);
         user.setInvalidAttemptCount(0);
         userRepository.save(user);
-//        if (oldToken != null){
-//            tokenRepository.deleteByToken(oldToken);
-//        }
+
         UserDTO userDTO = modelMapper.map(user, UserDTO.class);
-        userDTO.setToken(tokenResponse.getToken());
+        userDTO.setToken(token);
 
         return new ResponseHandler<>(userDTO, AppResponse.OK);
     }
@@ -95,16 +73,12 @@ public class LoginLogoutServiceImpl implements LoginLogoutService {
     public ResponseHandler userLogout(String token) {
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
 
         User user = userRepository.findByEmail(userEmail);
         if (user == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-
-//        if (user.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(user.getAuthorizationToken().getToken());
-//        }
         user.setAuthorizationToken(null);
         userRepository.save(user);
 
@@ -119,12 +93,8 @@ public class LoginLogoutServiceImpl implements LoginLogoutService {
         if (user == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-
-//        if (user.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(user.getAuthorizationToken().getToken());
-//        }
-        String token = tokenUtil.generateToken(user, TokenType.RESET_PASSWORD_TOKEN);
-        user.setAuthorizationToken(tokenUtil.convertTokenToAuthTokenObject(token));
+        String token = jwtService.generateToken(user, TokenType.RESET_PASSWORD_TOKEN);
+        user.setAuthorizationToken(token);
         userRepository.save(user);
 
         emailSenderService.sendSimpleEmail(user.getEmail(),
@@ -138,7 +108,7 @@ public class LoginLogoutServiceImpl implements LoginLogoutService {
     public ResponseHandler resetPassword(String token, ResetPasswordSaveCO resetPasswordSaveCO) {
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
 
         User user = userRepository.findByEmail(userEmail);
         if (user == null) {
@@ -149,14 +119,10 @@ public class LoginLogoutServiceImpl implements LoginLogoutService {
             return new ResponseHandler<>(AppResponse.CONFIRM_PASSWORD_MISMATCH);
         }
 
-        if (passwordEncoder.matches(resetPasswordSaveCO.getPassword(), user.getPassword())) {
+        if (passwordEncoder.matches(resetPasswordSaveCO.getPassword(), user.getPasswordHash())) {
             return new ResponseHandler<>(AppResponse.PASSWORD_CANNOT_BE_SAME_AS_PREVIOUS);
         }
-
-        user.setPassword(passwordEncoder.encode(resetPasswordSaveCO.getPassword()));
-//        if (user.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(user.getAuthorizationToken().getToken());
-//        }
+        user.setPasswordHash(passwordEncoder.encode(resetPasswordSaveCO.getPassword()));
         user.setAuthorizationToken(null);
         userRepository.save(user);
 

@@ -1,32 +1,31 @@
 package com.bootcamp.project.eCommerce.service.servicesImpl;
 
-import com.bootcamp.project.eCommerce.HelperMethods;
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.CategoryDTO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.ResetPasswordSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.AddressSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.ResetPasswordSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.SellerSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.UpdateSellerProfileSaveCO;
-import com.bootcamp.project.eCommerce.constants.FileFor;
+import com.bootcamp.project.eCommerce.constants.AppConstants;
+import com.bootcamp.project.eCommerce.constants.AppData;
+import com.bootcamp.project.eCommerce.constants.AppResponse;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
 import com.bootcamp.project.eCommerce.pojos.productFlow.category.Category;
-import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
-import com.bootcamp.project.eCommerce.repos.*;
-import com.bootcamp.project.eCommerce.security.TokenAuthentication;
-import com.bootcamp.project.eCommerce.constants.AppResponse;
-import com.bootcamp.project.eCommerce.constants.ApplicationConstants;
 import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
-import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.SellerSaveCO;
+import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.GrantedAuthorityImpl;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.User;
-import com.bootcamp.project.eCommerce.security.TokenUtil;
+import com.bootcamp.project.eCommerce.repos.*;
+import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
 import com.bootcamp.project.eCommerce.service.services.SellerService;
+import com.bootcamp.project.eCommerce.utils.Utils;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -34,52 +33,22 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SellerServiceImpl implements SellerService {
 
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    SellerRepository sellerRepository;
-
-    @Autowired
-    ModelMapper modelMapper;
-
-    @Autowired
-    PasswordEncoder passwordEncoder;
-
-    @Autowired
-    TokenAuthentication tokenAuthentication;
-
-    @Autowired
-    EmailSenderService emailSenderService;
-
-    @Autowired
-    TokenUtil tokenUtil;
-
-    @Autowired
-    AddressRepository addressRepository;
-
-    @Autowired
-    CategoryRepository categoryRepository;
-
-    @Autowired
-    FileUploadService fileUploadService;
-
-    @Autowired
-    CategoryMetadataFieldRepository metadataFieldRepository;
-
-    @Autowired
-    CategoryMetadataFieldValueRepository metadataFieldValueRepository;
-
-    @Autowired
-    HelperMethods helperMethods;
-
-    @Autowired
-    AuthorizationTokenRepository tokenRepository;
-
-    final static String ROLE_SELLER = "ROLE_SELLER";
+    final UserRepository userRepository;
+    final SellerRepository sellerRepository;
+    final ModelMapper modelMapper;
+    final PasswordEncoder passwordEncoder;
+    final EmailSenderService emailSenderService;
+    final JWTService jwtService;
+    final AddressRepository addressRepository;
+    final CategoryRepository categoryRepository;
+    final FileUploadService fileUploadService;
+    final CategoryMetadataFieldRepository metadataFieldRepository;
+    final CategoryMetadataFieldValueRepository metadataFieldValueRepository;
+    final Utils utils;
 
     @Override
     public ResponseHandler<UserDTO> addSeller(SellerSaveCO sellerSaveCO, MultipartFile image) throws Exception {
@@ -87,7 +56,7 @@ public class SellerServiceImpl implements SellerService {
         if (!sellerSaveCO.getPassword().equals(sellerSaveCO.getConfirmPassword())) {
             return new ResponseHandler<>(AppResponse.CONFIRM_PASSWORD_MISMATCH);
         }
-        if (ApplicationConstants.MASTER_ADMIN.getData().equals(sellerSaveCO.getEmail())) {
+        if (AppData.MASTER_ADMIN.getData().equals(sellerSaveCO.getEmail())) {
             return new ResponseHandler<>(AppResponse.USER_ALREADY_EXIST);
         }
 
@@ -107,12 +76,12 @@ public class SellerServiceImpl implements SellerService {
         Seller seller = modelMapper.map(sellerSaveCO, Seller.class);
 
         GrantedAuthorityImpl grantedAuthority = new GrantedAuthorityImpl();
-        grantedAuthority.setAuthority(ROLE_SELLER);
+        grantedAuthority.setAuthority(AppConstants.ROLE_SELLER);
         seller.setGrantedAuthorities(Collections.singletonList(grantedAuthority));
 
-        seller.setAddress(Arrays.asList(sellerSaveCO.getAddress()));
+        seller.setAddresses(Arrays.asList(sellerSaveCO.getAddress()));
 
-        seller.setPassword(passwordEncoder.encode(seller.getPassword()));
+        seller.setPasswordHash(passwordEncoder.encode(seller.getPasswordHash()));
         userRepository.save(seller);
 
         User savedUser = userRepository.findByEmail(seller.getEmail());
@@ -128,7 +97,7 @@ public class SellerServiceImpl implements SellerService {
     public ResponseHandler<UserDTO> getSeller(String token) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = jwtService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
 
         if (seller == null) {
@@ -142,13 +111,13 @@ public class SellerServiceImpl implements SellerService {
     public ResponseHandler updateProfile(String token, UpdateSellerProfileSaveCO updateSellerProfileSaveCO) {
 
         String jwtToken = token.substring(7);
-        String username = tokenUtil.getUsernameFromToken(jwtToken);
+        String username = jwtService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(username);
 
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        helperMethods.copyNonNullProperties(updateSellerProfileSaveCO, seller);
+        utils.copyNonNullProperties(updateSellerProfileSaveCO, seller);
         sellerRepository.save(seller);
 
         return new ResponseHandler(AppResponse.PROFILE_UPDATED);
@@ -158,7 +127,7 @@ public class SellerServiceImpl implements SellerService {
     public ResponseHandler resetPassword(String token, ResetPasswordSaveCO resetPasswordSaveCO) {
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(userEmail);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
@@ -168,15 +137,11 @@ public class SellerServiceImpl implements SellerService {
             return new ResponseHandler<>(AppResponse.CONFIRM_PASSWORD_MISMATCH);
         }
 
-        if (passwordEncoder.matches(resetPasswordSaveCO.getPassword(), seller.getPassword())) {
+        if (passwordEncoder.matches(resetPasswordSaveCO.getPassword(), seller.getPasswordHash())) {
             return new ResponseHandler<>(AppResponse.PASSWORD_CANNOT_BE_SAME_AS_PREVIOUS);
         }
-
-//        if (seller.getAuthorizationToken().getToken() != null){
-//            tokenRepository.deleteByToken(seller.getAuthorizationToken().getToken());
-//        }
         seller.setAuthorizationToken(null);
-        seller.setPassword(passwordEncoder.encode(resetPasswordSaveCO.getPassword()));
+        seller.setPasswordHash(passwordEncoder.encode(resetPasswordSaveCO.getPassword()));
         sellerRepository.save(seller);
 
         emailSenderService.sendSimpleEmail(seller.getEmail(),
@@ -197,16 +162,16 @@ public class SellerServiceImpl implements SellerService {
         Address address = optionalAddress.get();
 
         String jwtToken = token.substring(7);
-        String userEmail = tokenUtil.getUsernameFromToken(jwtToken);
+        String userEmail = jwtService.getUsernameFromToken(jwtToken);
         Seller seller = sellerRepository.findByEmail(userEmail);
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        if (!seller.getId().equals(address.getUser().getId())) {
+        if (!seller.doesContainsAddress(address)) {
             return new ResponseHandler(AppResponse.ADDRESS_NOT_FOUND);
         }
 
-        helperMethods.copyNonNullProperties(addressSaveCO, address);
+        utils.copyNonNullProperties(addressSaveCO, address);
         addressRepository.save(address);
 
         return new ResponseHandler(AppResponse.ADDRESS_UPDATED);
@@ -226,7 +191,7 @@ public class SellerServiceImpl implements SellerService {
                 leafCategoryList.add(category);
             }
         }
-        List<CategoryDTO> categoryDTOS = helperMethods.convertToCategoryDTOList(leafCategoryList);
+        List<CategoryDTO> categoryDTOS = utils.convertToCategoryDTOList(leafCategoryList);
         return new ResponseHandler(categoryDTOS, AppResponse.OK);
     }
 }

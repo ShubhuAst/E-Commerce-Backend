@@ -1,6 +1,10 @@
 package com.bootcamp.project.eCommerce.pojos.userFlow.user;
 
-import com.bootcamp.project.eCommerce.security.tokenPOJO.AuthorizationToken;
+import com.bootcamp.project.eCommerce.pojos.Auditable;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,7 +13,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.persistence.*;
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -20,12 +24,18 @@ import java.util.List;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Inheritance(strategy = InheritanceType.JOINED)
-public class User implements UserDetails {
+public class User extends Auditable implements UserDetails {
+
+    @Serial
+    private static final long serialVersionUID = 1201295790102223956L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
+    @NotBlank
+    @Column(nullable = false, unique = true)
+    @Email(message = "Please provide a valid email address")
     String email;
 
     String firstName;
@@ -34,7 +44,13 @@ public class User implements UserDetails {
 
     String lastName;
 
-    String password;
+    @NotNull
+    @Column(nullable = false)
+    String passwordHash;
+
+    @NotNull
+    @Column(nullable = false)
+    String contact;
 
     Boolean isDeleted = false;
 
@@ -49,29 +65,22 @@ public class User implements UserDetails {
     Integer invalidAttemptCount = 0;
 
     @Temporal(TemporalType.TIMESTAMP)
-    Date dateCreated;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    Date lastUpdated;
-
-    String createdBy;
-
-    String updatedBy;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    Date password_last_updated;
+    Date passwordLastUpdated;
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
+    @JoinTable(name = "user_role",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
     List<GrantedAuthorityImpl> grantedAuthorities;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "auth_token_id", referencedColumnName = "id")
-    AuthorizationToken authorizationToken;
+    String authorizationToken;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    List<Address> address;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_id")
+    List<Address> addresses;
+
+    @Version
+    Long version;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -103,25 +112,17 @@ public class User implements UserDetails {
         return isActive;
     }
 
-    @PrePersist
-    protected void onCreate() {
-        dateCreated = new Date();
-        createdBy = email;
+    public void setPasswordHash(String password) {
+        passwordLastUpdated = new Date();
+        this.passwordHash = password;
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        lastUpdated = new Date();
-        updatedBy = email;
+    @Override
+    public String getPassword() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        password_last_updated = new Date();
-        this.password = password;
-    }
-
-    public void setAddress(List<Address> address) {
-        address.forEach(addr -> addr.setUser(this));
-        this.address = address;
+    public Boolean doesContainsAddress(Address address) {
+        return addresses.contains(address);
     }
 }

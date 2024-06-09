@@ -1,14 +1,12 @@
 package com.bootcamp.project.eCommerce.co_dto.saveCO;
 
-import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-
-import javax.validation.constraints.Email;
-import javax.validation.constraints.Pattern;
 
 @Getter
 @Setter
@@ -31,7 +29,7 @@ public class UpdateSellerProfileSaveCO {
     @Pattern(regexp = "(0|91)?[7-9][0-9]{9}", message = "Invalid Contact Number")
     String companyContact;
 
-    @Pattern(regexp = "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$",message = "Invalid GST Identification Number")
+    @Pattern(regexp = "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$", message = "Invalid GST Identification Number")
     String gst;
 
     String companyName;

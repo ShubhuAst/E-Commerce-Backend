@@ -1,34 +1,35 @@
 package com.bootcamp.project.eCommerce.pojos.productFlow;
 
+import com.bootcamp.project.eCommerce.pojos.Auditable;
 import com.bootcamp.project.eCommerce.pojos.productFlow.category.Category;
 import com.bootcamp.project.eCommerce.pojos.userFlow.Seller;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Product {
+public class Product extends Auditable implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 7684372500993977579L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "seller_user_id")
+    @JoinColumn(name = "seller_id")
     Seller seller;
 
     String name;
@@ -49,21 +50,14 @@ public class Product {
 
     Boolean isDeleted = false;
 
-    @Temporal(TemporalType.TIMESTAMP)
-    Date dateCreated;
-
-    @Temporal(TemporalType.TIMESTAMP)
-    Date lastUpdated;
-
-    String createdBy;
-
-    String updatedBy;
-
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     List<ProductReview> productReviews;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     List<ProductVariation> productVariations;
+
+    @Version
+    Long version;
 
     public void setProductReviews(List<ProductReview> productReviews) {
 
@@ -75,17 +69,5 @@ public class Product {
 
         productVariations.forEach(productVariation -> productVariation.setProduct(this));
         this.productVariations = productVariations;
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        dateCreated = new Date();
-        createdBy = seller.getEmail();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        lastUpdated = new Date();
-        updatedBy = seller.getEmail();
     }
 }

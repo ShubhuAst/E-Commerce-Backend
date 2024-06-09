@@ -1,6 +1,5 @@
 package com.bootcamp.project.eCommerce.service.servicesImpl;
 
-import com.bootcamp.project.eCommerce.HelperMethods;
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.CategoryDTO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.MetadataFieldValueSaveCO;
@@ -14,32 +13,27 @@ import com.bootcamp.project.eCommerce.repos.CategoryMetadataFieldRepository;
 import com.bootcamp.project.eCommerce.repos.CategoryMetadataFieldValueRepository;
 import com.bootcamp.project.eCommerce.repos.CategoryRepository;
 import com.bootcamp.project.eCommerce.service.services.Category_AdminService;
+import com.bootcamp.project.eCommerce.utils.Utils;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class CategoryAdminServiceImpl implements Category_AdminService {
 
-    @Autowired
-    CategoryRepository categoryRepository;
-
-    @Autowired
-    CategoryMetadataFieldRepository metadataFieldRepository;
-
-    @Autowired
-    CategoryMetadataFieldValueRepository metadataFieldValueRepository;
-
-    @Autowired
-    HelperMethods helperMethods;
-
-    @Autowired
-    ModelMapper modelMapper;
+    final CategoryRepository categoryRepository;
+    final CategoryMetadataFieldRepository metadataFieldRepository;
+    final CategoryMetadataFieldValueRepository metadataFieldValueRepository;
+    final Utils utils;
+    final ModelMapper modelMapper;
 
     @Override
     public ResponseHandler addCategory(String name, Long parentID) {
@@ -71,7 +65,7 @@ public class CategoryAdminServiceImpl implements Category_AdminService {
             return new ResponseHandler(AppResponse.CATEGORY_NOT_FOUND);
         }
         Category category = optionalCategory.get();
-        CategoryDTO categoryDTO = helperMethods.convertToCategoryDTOList(Arrays.asList(category)).get(0);
+        CategoryDTO categoryDTO = utils.convertToCategoryDTOList(Arrays.asList(category)).get(0);
         return new ResponseHandler(categoryDTO, AppResponse.OK);
     }
 
@@ -104,7 +98,7 @@ public class CategoryAdminServiceImpl implements Category_AdminService {
             }
             String sort = filter.get("sort");
             String order = filter.get("order");
-            Pageable pageable = helperMethods.filterResultPageable(max, offset, sort, order);
+            Pageable pageable = utils.filterResultPageable(max, offset, sort, order);
             Page<Category> categoryPage = categoryRepository.findAll(pageable);
             if (categoryPage.getContent().size() == 0) {
                 return new ResponseHandler(AppResponse.PAGE_NOT_FOUND);
@@ -113,7 +107,7 @@ public class CategoryAdminServiceImpl implements Category_AdminService {
                 categoryList.add(category);
             }
         }
-        List<CategoryDTO> categoryDTOS = helperMethods.convertToCategoryDTOList(categoryList);
+        List<CategoryDTO> categoryDTOS = utils.convertToCategoryDTOList(categoryList);
         return new ResponseHandler(categoryDTOS, AppResponse.OK);
     }
 
@@ -174,7 +168,7 @@ public class CategoryAdminServiceImpl implements Category_AdminService {
             }
             String sort = filter.get("sort");
             String order = filter.get("order");
-            Pageable pageable = helperMethods.filterResultPageable(max, offset, sort, order);
+            Pageable pageable = utils.filterResultPageable(max, offset, sort, order);
             Page<CategoryMetadataField> metadataFieldPage = metadataFieldRepository.findAll(pageable);
             if (metadataFieldPage.getContent().size() == 0) {
                 return new ResponseHandler(AppResponse.PAGE_NOT_FOUND);
@@ -208,7 +202,7 @@ public class CategoryAdminServiceImpl implements Category_AdminService {
                 return new ResponseHandler(AppResponse.METADATA_FIELD_VALUE_ALREADY_EXIST);
             } else {
                 CategoryMetadataFieldValue fieldValue = fieldValueOptional.get();
-                values = values.concat(",").concat(fieldValue.getValues_());
+                values = values.concat(",").concat(fieldValue.getValue());
             }
         }
         String[] arrValues = values.split(",");
@@ -220,7 +214,7 @@ public class CategoryAdminServiceImpl implements Category_AdminService {
         }
         CategoryMetadataFieldValue metadataFieldValue = new CategoryMetadataFieldValue();
         metadataFieldValue.setMetadataFieldValueID(metadataFieldValueID);
-        metadataFieldValue.setValues_(values);
+        metadataFieldValue.setValue(values);
 
         metadataFieldValueRepository.save(metadataFieldValue);
 

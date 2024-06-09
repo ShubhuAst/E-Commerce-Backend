@@ -2,38 +2,32 @@ package com.bootcamp.project.eCommerce.controller;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.AdminSaveCO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.CustomerSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.SellerSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.UserSaveCO;
 import com.bootcamp.project.eCommerce.service.services.AdminService;
 import com.bootcamp.project.eCommerce.service.services.CustomerService;
 import com.bootcamp.project.eCommerce.service.services.SellerService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
-
 @RestController
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequestMapping("/register")
 public class RegisterUserController {
 
-    @Autowired
-    CustomerService customerService;
-
-    @Autowired
-    SellerService sellerService;
-
-    @Autowired
-    AdminService adminService;
+    final CustomerService customerService;
+    final SellerService sellerService;
+    final AdminService adminService;
 
     @PostMapping("/customer")
-    public ResponseEntity<ResponseHandler<UserDTO>> addCustomer(@Valid @RequestBody CustomerSaveCO customerSaveCO,
+    public ResponseEntity<ResponseHandler<UserDTO>> addCustomer(@Valid @RequestBody UserSaveCO customerSaveCO,
                                                                 @RequestParam(required = false) MultipartFile image) throws Exception {
 
         ResponseHandler<UserDTO> responseHandler = customerService.addCustomer(customerSaveCO, image);
@@ -49,7 +43,7 @@ public class RegisterUserController {
     }
 
     @PostMapping("/admin")
-    public ResponseEntity<ResponseHandler<UserDTO>> addAdmin(@Valid @RequestBody AdminSaveCO adminSaveCO,
+    public ResponseEntity<ResponseHandler<UserDTO>> addAdmin(@Valid @RequestBody UserSaveCO adminSaveCO,
                                                              @RequestParam(required = false) MultipartFile image) throws Exception {
 
         ResponseHandler<UserDTO> responseHandler = adminService.addAdmin(adminSaveCO, image);

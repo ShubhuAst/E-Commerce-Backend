@@ -5,25 +5,23 @@ import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.LoginSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.ReSendTokenSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.ResetPasswordSaveCO;
+import com.bootcamp.project.eCommerce.constants.AppConstants;
 import com.bootcamp.project.eCommerce.service.services.LoginLogoutService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-
 @RestController
+@RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequestMapping("/session")
 public class LoginLogoutController {
 
-    @Autowired
-    LoginLogoutService loginLogoutService;
-
-    final String HEADER_AUTHORIZATION = "Authorization";
+    final LoginLogoutService loginLogoutService;
 
     @PostMapping("/login")
     public ResponseEntity<ResponseHandler<UserDTO>> userLogin(@Valid @RequestBody LoginSaveCO loginSaveCO) throws Exception {
@@ -33,7 +31,7 @@ public class LoginLogoutController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ResponseHandler> userLogout(@RequestHeader(HEADER_AUTHORIZATION) String token) throws Exception {
+    public ResponseEntity<ResponseHandler> userLogout(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token) throws Exception {
 
         ResponseHandler responseHandler = loginLogoutService.userLogout(token);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
@@ -47,7 +45,7 @@ public class LoginLogoutController {
     }
 
     @PatchMapping("/reset/password")
-    public ResponseEntity<ResponseHandler> resetPassword(@RequestHeader(HEADER_AUTHORIZATION) String token,
+    public ResponseEntity<ResponseHandler> resetPassword(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token,
                                                          @Valid @RequestBody ResetPasswordSaveCO resetPasswordSaveCO) throws Exception {
 
         ResponseHandler responseHandler = loginLogoutService.resetPassword(token, resetPasswordSaveCO);
