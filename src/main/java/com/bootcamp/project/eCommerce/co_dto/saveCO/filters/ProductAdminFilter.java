@@ -10,20 +10,12 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductAdminFilter {
+public class ProductAdminFilter extends PageFilterSaveCO {
 
     Long categoryId;
 
     Long sellerId;
 
     String name;
-
-    Integer max;
-
-    Integer offset;
-
-    String sort;
-
-    String order;
 
 }

@@ -1,17 +1,16 @@
-package com.bootcamp.project.eCommerce.controller;
+package com.bootcamp.project.eCommerce.controller.admin;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.ProductAdminFilter;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.UserFilterSaveCO;
 import com.bootcamp.project.eCommerce.constants.AppConstants;
-import com.bootcamp.project.eCommerce.service.services.AdminService;
+import com.bootcamp.project.eCommerce.service.services.admin.AdminService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -22,51 +21,49 @@ public class AdminController {
     final AdminService adminService;
 
     @GetMapping("/customer/all")
-    public ResponseEntity<ResponseHandler> getAllCustomers(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token,
-                                                           @RequestParam(required = false) Map<String, String> filter) {
+    public ResponseEntity<ResponseHandler> getAllCustomers(@RequestParam(required = false) UserFilterSaveCO userFilterSaveCO) {
 
-        ResponseHandler responseHandler = adminService.getAllCustomers(token, filter);
+        ResponseHandler responseHandler = adminService.getAllCustomers(userFilterSaveCO);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
 
     }
 
     @GetMapping("/seller/all")
-    public ResponseEntity<ResponseHandler> getAllSellers(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token,
-                                                         @RequestParam(required = false) Map<String, String> filter) {
+    public ResponseEntity<ResponseHandler> getAllSellers(@RequestParam(required = false) UserFilterSaveCO userFilterSaveCO) {
 
-        ResponseHandler responseHandler = adminService.getAllSellers(token, filter);
+        ResponseHandler responseHandler = adminService.getAllSellers(userFilterSaveCO);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
 
     }
 
     @PatchMapping("/customer/activate")
-    public ResponseEntity<ResponseHandler> activateCustomer(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token, @RequestParam Long id) {
+    public ResponseEntity<ResponseHandler> activateCustomer(@RequestParam Long id) {
 
-        ResponseHandler responseHandler = adminService.activateUser(token, id, AppConstants.ROLE_CUSTOMER);
+        ResponseHandler responseHandler = adminService.activateUser(id, AppConstants.ROLE_CUSTOMER);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
 
     }
 
     @PatchMapping("/customer/deactivate")
-    public ResponseEntity<ResponseHandler> deActivateCustomer(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token, @RequestParam Long id) {
+    public ResponseEntity<ResponseHandler> deActivateCustomer(@RequestParam Long id) {
 
-        ResponseHandler responseHandler = adminService.deActivateUser(token, id, AppConstants.ROLE_CUSTOMER);
+        ResponseHandler responseHandler = adminService.deActivateUser(id, AppConstants.ROLE_CUSTOMER);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
 
     }
 
     @PatchMapping("/seller/activate")
-    public ResponseEntity<ResponseHandler> activateSeller(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token, @RequestParam Long id) {
+    public ResponseEntity<ResponseHandler> activateSeller(@RequestParam Long id) {
 
-        ResponseHandler responseHandler = adminService.activateUser(token, id, AppConstants.ROLE_SELLER);
+        ResponseHandler responseHandler = adminService.activateUser(id, AppConstants.ROLE_SELLER);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
 
     }
 
     @PatchMapping("/seller/deactivate")
-    public ResponseEntity<ResponseHandler> deActivateSeller(@RequestHeader(AppConstants.HEADER_AUTHORIZATION) String token, @RequestParam Long id) {
+    public ResponseEntity<ResponseHandler> deActivateSeller(@RequestParam Long id) {
 
-        ResponseHandler responseHandler = adminService.deActivateUser(token, id, AppConstants.ROLE_SELLER);
+        ResponseHandler responseHandler = adminService.deActivateUser(id, AppConstants.ROLE_SELLER);
         return new ResponseEntity<>(responseHandler, HttpStatus.valueOf(responseHandler.getStatusCode()));
 
     }

@@ -11,18 +11,10 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CustomerProductFilter {
+public class CustomerProductFilter extends PageFilterSaveCO {
 
     @NotNull(message = "Category Id Can't be Null")
     Long categoryId;
-
-    Integer max;
-
-    Integer offset;
-
-    String sort;
-
-    String order;
 
     String name;
 

@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.service.servicesImpl;
+package com.bootcamp.project.eCommerce.service.servicesImpl.seller;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.CategoryDTO;
@@ -20,8 +20,8 @@ import com.bootcamp.project.eCommerce.repos.*;
 import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
-import com.bootcamp.project.eCommerce.service.services.SellerService;
-import com.bootcamp.project.eCommerce.utils.Utils;
+import com.bootcamp.project.eCommerce.service.services.seller.SellerService;
+import com.bootcamp.project.eCommerce.utils.MapperUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -48,7 +48,7 @@ public class SellerServiceImpl implements SellerService {
     final FileUploadService fileUploadService;
     final CategoryMetadataFieldRepository metadataFieldRepository;
     final CategoryMetadataFieldValueRepository metadataFieldValueRepository;
-    final Utils utils;
+    final MapperUtils mapperUtils;
 
     @Override
     public ResponseHandler<UserDTO> addSeller(SellerSaveCO sellerSaveCO, MultipartFile image) throws Exception {
@@ -117,7 +117,7 @@ public class SellerServiceImpl implements SellerService {
         if (seller == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        utils.copyNonNullProperties(updateSellerProfileSaveCO, seller);
+        mapperUtils.copyNonNullProperties(updateSellerProfileSaveCO, seller);
         sellerRepository.save(seller);
 
         return new ResponseHandler(AppResponse.PROFILE_UPDATED);
@@ -171,7 +171,7 @@ public class SellerServiceImpl implements SellerService {
             return new ResponseHandler(AppResponse.ADDRESS_NOT_FOUND);
         }
 
-        utils.copyNonNullProperties(addressSaveCO, address);
+        mapperUtils.copyNonNullProperties(addressSaveCO, address);
         addressRepository.save(address);
 
         return new ResponseHandler(AppResponse.ADDRESS_UPDATED);
@@ -191,7 +191,7 @@ public class SellerServiceImpl implements SellerService {
                 leafCategoryList.add(category);
             }
         }
-        List<CategoryDTO> categoryDTOS = utils.convertToCategoryDTOList(leafCategoryList);
+        List<CategoryDTO> categoryDTOS = mapperUtils.convertToCategoryDTOList(leafCategoryList);
         return new ResponseHandler(categoryDTOS, AppResponse.OK);
     }
 }

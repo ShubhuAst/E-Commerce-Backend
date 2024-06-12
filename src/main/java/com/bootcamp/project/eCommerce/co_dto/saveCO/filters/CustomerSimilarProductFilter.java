@@ -11,18 +11,10 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CustomerSimilarProductFilter {
+public class CustomerSimilarProductFilter extends PageFilterSaveCO {
 
     @NotNull(message = "Product Id Can't be Null")
     Long productId;
-
-    Integer max;
-
-    Integer offset;
-
-    String sort;
-
-    String order;
 
     String name;
 }

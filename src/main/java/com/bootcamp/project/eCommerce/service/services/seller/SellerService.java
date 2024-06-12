@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.service.services;
+package com.bootcamp.project.eCommerce.service.services.seller;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;

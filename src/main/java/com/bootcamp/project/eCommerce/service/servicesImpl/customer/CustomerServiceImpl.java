@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.service.servicesImpl;
+package com.bootcamp.project.eCommerce.service.servicesImpl.customer;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.*;
@@ -21,8 +21,8 @@ import com.bootcamp.project.eCommerce.repos.*;
 import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
-import com.bootcamp.project.eCommerce.service.services.CustomerService;
-import com.bootcamp.project.eCommerce.utils.Utils;
+import com.bootcamp.project.eCommerce.service.services.customer.CustomerService;
+import com.bootcamp.project.eCommerce.utils.MapperUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -47,7 +47,7 @@ public class CustomerServiceImpl implements CustomerService {
     final JWTService jwtService;
     final CustomerRepository customerRepository;
     final CategoryRepository categoryRepository;
-    final Utils utils;
+    final MapperUtils mapperUtils;
     final AddressRepository addressRepository;
     final FileUploadService fileUploadService;
     final ProductRepository productRepository;
@@ -177,7 +177,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (customer == null) {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
-        utils.copyNonNullProperties(updateCustomerProfileSaveCO, customer);
+        mapperUtils.copyNonNullProperties(updateCustomerProfileSaveCO, customer);
         customerRepository.save(customer);
 
         return new ResponseHandler(AppResponse.PROFILE_UPDATED);
@@ -280,7 +280,7 @@ public class CustomerServiceImpl implements CustomerService {
             return new ResponseHandler(AppResponse.ADDRESS_NOT_FOUND);
         }
 
-        utils.copyNonNullProperties(addressSaveCO, address);
+        mapperUtils.copyNonNullProperties(addressSaveCO, address);
         addressRepository.save(address);
 
         return new ResponseHandler(AppResponse.ADDRESS_UPDATED);
@@ -302,7 +302,7 @@ public class CustomerServiceImpl implements CustomerService {
                     rootCategoryList.add(category);
                 }
             }
-            categoryDTOS = utils.convertToCategoryDTOList(rootCategoryList);
+            categoryDTOS = mapperUtils.convertToCategoryDTOList(rootCategoryList);
         } else {
 
             Optional<Category> optionalCategory = categoryRepository.findById(categoryId);
@@ -314,7 +314,7 @@ public class CustomerServiceImpl implements CustomerService {
                 return new ResponseHandler(AppResponse.CHILD_CATEGORY_NOT_FOUND);
             }
             List<Category> immediateChildOfPassedCategory = new ArrayList<>(passedCategory.getChildCategories());
-            categoryDTOS = utils.convertToCategoryDTOList(immediateChildOfPassedCategory);
+            categoryDTOS = mapperUtils.convertToCategoryDTOList(immediateChildOfPassedCategory);
         }
         return new ResponseHandler(categoryDTOS, AppResponse.OK);
     }
@@ -328,7 +328,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
         Category category = optionalCategory.get();
         List<FieldValueDTO> fieldValueDTOS =
-                utils.convertToCategoryDTOList(Arrays.asList(category)).get(0)
+                mapperUtils.convertToCategoryDTOList(Arrays.asList(category)).get(0)
                         .getFieldAndValues();
 
         List<Product> productList = productRepository.findAllByCategory(category);
@@ -388,7 +388,7 @@ public class CustomerServiceImpl implements CustomerService {
             return new ResponseHandler(AppResponse.VARIATION_NOT_FOUND);
         }
 
-        ProductDTO productDTO = utils.convertToProductDTOS(Arrays.asList(product)).get(0);
+        ProductDTO productDTO = mapperUtils.convertToProductDTOS(Arrays.asList(product)).get(0);
         return new ResponseHandler(productDTO, AppResponse.OK);
     }
 
@@ -405,7 +405,7 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         List<Product> resultProductList = new ArrayList<>();
-        Pageable pageable = utils.filterResultPageable(customerProductFilter.getMax(),
+        Pageable pageable = mapperUtils.filterResultPageable(customerProductFilter.getMax(),
                 customerProductFilter.getOffset(),
                 customerProductFilter.getSort(),
                 customerProductFilter.getOrder());
@@ -451,7 +451,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (nonDeletedActiveProduct == null) {
             return new ResponseHandler(AppResponse.PRODUCT_LIST_NOT_FOUND);
         }
-        List<ProductDTO> productDTOS = utils.convertToProductDTOS(nonDeletedActiveProduct);
+        List<ProductDTO> productDTOS = mapperUtils.convertToProductDTOS(nonDeletedActiveProduct);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 
@@ -469,7 +469,7 @@ public class CustomerServiceImpl implements CustomerService {
         if (product.getIsDeleted()) {
             return new ResponseHandler(AppResponse.PRODUCT_DELETED);
         }
-        Pageable pageable = utils.filterResultPageable(customerSimilarProductFilter.getMax(),
+        Pageable pageable = mapperUtils.filterResultPageable(customerSimilarProductFilter.getMax(),
                 customerSimilarProductFilter.getOffset(),
                 customerSimilarProductFilter.getSort(),
                 customerSimilarProductFilter.getOrder());
@@ -486,7 +486,7 @@ public class CustomerServiceImpl implements CustomerService {
             productList = Collections.singletonList(optionalProduct.get());
         }
 
-        List<ProductDTO> productDTOS = utils.convertToProductDTOS(productList);
+        List<ProductDTO> productDTOS = mapperUtils.convertToProductDTOS(productList);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 }

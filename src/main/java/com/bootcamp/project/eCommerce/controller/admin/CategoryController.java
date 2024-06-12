@@ -1,9 +1,9 @@
-package com.bootcamp.project.eCommerce.controller;
+package com.bootcamp.project.eCommerce.controller.admin;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.MetadataFieldValueSaveCO;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
-import com.bootcamp.project.eCommerce.service.services.Category_AdminService;
+import com.bootcamp.project.eCommerce.service.services.admin.CategoryService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -17,9 +17,9 @@ import java.util.Map;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequestMapping("/session/admin/category")
 @RequiredArgsConstructor
-public class Category_AdminController {
+public class CategoryController {
 
-    final Category_AdminService categoryAdminService;
+    final CategoryService categoryAdminService;
 
     @PostMapping
     public ResponseEntity addCategory(@RequestParam String name,

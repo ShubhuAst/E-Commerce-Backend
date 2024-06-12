@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.controller;
+package com.bootcamp.project.eCommerce.controller.seller;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
@@ -7,7 +7,7 @@ import com.bootcamp.project.eCommerce.co_dto.saveCO.ResetPasswordSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.UpdateSellerProfileSaveCO;
 import com.bootcamp.project.eCommerce.constants.AppConstants;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
-import com.bootcamp.project.eCommerce.service.services.SellerService;
+import com.bootcamp.project.eCommerce.service.services.seller.SellerService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

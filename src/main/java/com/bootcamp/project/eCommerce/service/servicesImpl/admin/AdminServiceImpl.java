@@ -1,10 +1,11 @@
-package com.bootcamp.project.eCommerce.service.servicesImpl;
+package com.bootcamp.project.eCommerce.service.servicesImpl.admin;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.ProductDTO;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.UserSaveCO;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.ProductAdminFilter;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.UserFilterSaveCO;
 import com.bootcamp.project.eCommerce.constants.AppConstants;
 import com.bootcamp.project.eCommerce.constants.AppData;
 import com.bootcamp.project.eCommerce.constants.AppResponse;
@@ -19,11 +20,13 @@ import com.bootcamp.project.eCommerce.repos.*;
 import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
-import com.bootcamp.project.eCommerce.service.services.AdminService;
-import com.bootcamp.project.eCommerce.utils.Utils;
+import com.bootcamp.project.eCommerce.service.services.admin.AdminService;
+import com.bootcamp.project.eCommerce.utils.MapperUtils;
+import com.bootcamp.project.eCommerce.utils.SecurityUtils;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,7 +46,7 @@ public class AdminServiceImpl implements AdminService {
     final UserRepository userRepository;
     final SellerRepository sellerRepository;
     final EmailSenderService emailSenderService;
-    final Utils utils;
+    final MapperUtils mapperUtils;
     final FileUploadService fileUploadService;
     final JWTService JWTService;
     final ModelMapper modelMapper;
@@ -89,79 +92,74 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ResponseHandler getAllCustomers(String token, Map<String, String> filter) {
-
-        if (filter.get("email") != null) {
-            String email = filter.get("email");
-            Customer customer = customerRepository.findByEmail(email);
+    public ResponseHandler<List<UserDTO>> getAllCustomers(UserFilterSaveCO filter) {
+        if (!StringUtils.isBlank(filter.getEmail())) {
+            Customer customer = customerRepository.findByEmail(filter.getEmail());
             if (customer == null) {
-                return new ResponseHandler(AppResponse.USER_NOT_FOUND);
+                return new ResponseHandler<List<UserDTO>>(AppResponse.USER_NOT_FOUND);
             }
             UserDTO userDTO = modelMapper.map(customer, UserDTO.class);
-            return new ResponseHandler(userDTO, AppResponse.OK);
+            return new ResponseHandler<List<UserDTO>>(List.of(userDTO), AppResponse.OK);
         } else {
-            Integer max = null, offset = null;
-            if (filter.get("max") != null) {
-                max = Integer.valueOf(filter.get("max"));
+            Integer max = 10, offset = 0;
+            if (filter.getMax() != null && filter.getMax() > 0) {
+                max = filter.getMax();
             }
-            if (filter.get("offset") != null) {
-                offset = Integer.valueOf(filter.get("offset"));
+            if (filter.getOffset() != null) {
+                offset = filter.getOffset();
             }
-            String sort = filter.get("sort");
-            String order = filter.get("order");
-            Pageable pageable = utils.filterResultPageable(max, offset, sort, order);
+            String sort = StringUtils.isBlank(filter.getSort()) ? "email" : filter.getSort();
+            String order = StringUtils.isBlank(filter.getOrder()) ? "asc" : filter.getOrder();
+            Pageable pageable = mapperUtils.filterResultPageable(max, offset, sort, order);
             Page<Customer> customerPage = customerRepository.findAll(pageable);
-            if (customerPage.getContent().size() == 0) {
-                return new ResponseHandler(AppResponse.PAGE_NOT_FOUND);
+            if (customerPage.getContent().isEmpty()) {
+                return new ResponseHandler<List<UserDTO>>(AppResponse.PAGE_NOT_FOUND);
             }
             List<UserDTO> userDTOS = new ArrayList<>();
             for (Customer customer : customerPage) {
                 UserDTO userDTO = modelMapper.map(customer, UserDTO.class);
                 userDTOS.add(userDTO);
             }
-            return new ResponseHandler(userDTOS, AppResponse.OK);
+            return new ResponseHandler<List<UserDTO>>(userDTOS, AppResponse.OK);
         }
     }
 
     @Override
-    public ResponseHandler getAllSellers(String token, Map<String, String> filter) {
+    public ResponseHandler<List<UserDTO>> getAllSellers(UserFilterSaveCO filter) {
 
-        if (filter.get("email") != null) {
-            String email = filter.get("email");
-            Seller seller = sellerRepository.findByEmail(email);
+        if (!StringUtils.isBlank(filter.getEmail())) {
+            Seller seller = sellerRepository.findByEmail(filter.getEmail());
             if (seller == null) {
-                return new ResponseHandler(AppResponse.USER_NOT_FOUND);
+                return new ResponseHandler<List<UserDTO>>(AppResponse.USER_NOT_FOUND);
             }
             UserDTO userDTO = modelMapper.map(seller, UserDTO.class);
-            return new ResponseHandler(userDTO, AppResponse.OK);
+            return new ResponseHandler<List<UserDTO>>(List.of(userDTO), AppResponse.OK);
         } else {
-            Integer max = null, offset = null;
-            if (filter.get("max") != null) {
-                max = Integer.valueOf(filter.get("max"));
+            Integer max = 10, offset = 0;
+            if (filter.getMax() != null && filter.getMax() > 0) {
+                max = filter.getMax();
             }
-            if (filter.get("offset") != null) {
-                offset = Integer.valueOf(filter.get("offset"));
+            if (filter.getOffset() != null) {
+                offset = filter.getOffset();
             }
-            String sort = filter.get("sort");
-            String order = filter.get("order");
-            Pageable pageable = utils.filterResultPageable(max, offset, sort, order);
+            String sort = StringUtils.isBlank(filter.getSort()) ? "email" : filter.getSort();
+            String order = StringUtils.isBlank(filter.getOrder()) ? "asc" : filter.getOrder();
+            Pageable pageable = mapperUtils.filterResultPageable(max, offset, sort, order);
             Page<Seller> sellerPage = sellerRepository.findAll(pageable);
-            if (sellerPage.getContent().size() == 0) {
-                return new ResponseHandler(AppResponse.PAGE_NOT_FOUND);
+            if (sellerPage.getContent().isEmpty()) {
+                return new ResponseHandler<List<UserDTO>>(AppResponse.PAGE_NOT_FOUND);
             }
             List<UserDTO> userDTOS = new ArrayList<>();
             for (Seller seller : sellerPage) {
                 UserDTO userDTO = modelMapper.map(seller, UserDTO.class);
                 userDTOS.add(userDTO);
             }
-            return new ResponseHandler(userDTOS, AppResponse.OK);
+            return new ResponseHandler<List<UserDTO>>(userDTOS, AppResponse.OK);
         }
     }
 
     @Override
-    public ResponseHandler activateUser(String token, Long id, String userType) {
-        String jwtToken = token.substring(7);
-
+    public ResponseHandler activateUser(Long id, String userType) {
         if (userType.equals(AppConstants.ROLE_CUSTOMER)) {
             Optional<Customer> customer = customerRepository.findById(id);
             if (!customer.isPresent()) {
@@ -180,10 +178,9 @@ public class AdminServiceImpl implements AdminService {
         }
         User user = userOptional.get();
 
-        String loggedInAdminEmail = JWTService.getUsernameFromToken(jwtToken);
         if (user.getGrantedAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(AppConstants.ROLE_ADMIN))) {
-            if (!AppData.MASTER_ADMIN.getData().equals(loggedInAdminEmail)) {
+            if (!AppData.MASTER_ADMIN.getData().equals(SecurityUtils.getLoggedInUsername())) {
                 return new ResponseHandler(AppResponse.NOT_A_MASTER_ADMIN);
             }
         }
@@ -202,9 +199,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public ResponseHandler deActivateUser(String token, Long id, String userType) {
-        String jwtToken = token.substring(7);
-
+    public ResponseHandler deActivateUser(Long id, String userType) {
         if (userType.equals(AppConstants.ROLE_CUSTOMER)) {
             Optional<Customer> customer = customerRepository.findById(id);
             if (!customer.isPresent()) {
@@ -223,10 +218,9 @@ public class AdminServiceImpl implements AdminService {
         }
         User user = userOptional.get();
 
-        String loggedInAdminEmail = JWTService.getUsernameFromToken(jwtToken);
         if (user.getGrantedAuthorities().stream()
                 .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals(AppConstants.ROLE_ADMIN))) {
-            if (!AppData.MASTER_ADMIN.getData().equals(loggedInAdminEmail)) {
+            if (!AppData.MASTER_ADMIN.getData().equals(SecurityUtils.getLoggedInUsername())) {
                 return new ResponseHandler(AppResponse.NOT_A_MASTER_ADMIN);
             }
         }
@@ -252,7 +246,7 @@ public class AdminServiceImpl implements AdminService {
             return new ResponseHandler(AppResponse.PRODUCT_NOT_FOUND);
         }
         Product product = optionalProduct.get();
-        ProductDTO productDTO = utils.convertToProductDTOS(Arrays.asList(product)).get(0);
+        ProductDTO productDTO = mapperUtils.convertToProductDTOS(Arrays.asList(product)).get(0);
         return new ResponseHandler(productDTO, AppResponse.OK);
     }
 
@@ -268,7 +262,7 @@ public class AdminServiceImpl implements AdminService {
             saveCO.setSort(null);
             productAdminFilter = saveCO;
         }
-        Pageable pageable = utils.filterResultPageable(productAdminFilter.getMax(),
+        Pageable pageable = mapperUtils.filterResultPageable(productAdminFilter.getMax(),
                 productAdminFilter.getOffset(),
                 productAdminFilter.getSort(),
                 productAdminFilter.getOrder());
@@ -306,7 +300,7 @@ public class AdminServiceImpl implements AdminService {
             }
             resultProductList.addAll(productList.getContent());
         }
-        List<ProductDTO> productDTOS = utils.convertToProductDTOS(resultProductList);
+        List<ProductDTO> productDTOS = mapperUtils.convertToProductDTOS(resultProductList);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 

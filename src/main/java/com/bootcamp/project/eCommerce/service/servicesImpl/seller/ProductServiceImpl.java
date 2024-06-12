@@ -1,10 +1,14 @@
-package com.bootcamp.project.eCommerce.service.servicesImpl;
+package com.bootcamp.project.eCommerce.service.servicesImpl.seller;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.ProductDTO;
 import com.bootcamp.project.eCommerce.co_dto.dto.ProductVariationDTO;
 import com.bootcamp.project.eCommerce.co_dto.dto.SupportingProductDTO;
-import com.bootcamp.project.eCommerce.co_dto.saveCO.*;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.ProductSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.ProductUpdateSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.ProductVariationSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.VariationUpdateSaveCO;
+import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.PageFilterSaveCO;
 import com.bootcamp.project.eCommerce.constants.AppData;
 import com.bootcamp.project.eCommerce.constants.AppResponse;
 import com.bootcamp.project.eCommerce.constants.FileFor;
@@ -18,8 +22,8 @@ import com.bootcamp.project.eCommerce.repos.*;
 import com.bootcamp.project.eCommerce.security.JWTService;
 import com.bootcamp.project.eCommerce.service.EmailSenderService;
 import com.bootcamp.project.eCommerce.service.FileUploadService;
-import com.bootcamp.project.eCommerce.service.services.Product_SellerService;
-import com.bootcamp.project.eCommerce.utils.Utils;
+import com.bootcamp.project.eCommerce.service.services.seller.ProductService;
+import com.bootcamp.project.eCommerce.utils.MapperUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import lombok.AccessLevel;
@@ -36,7 +40,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductSellerServiceImpl implements Product_SellerService {
+public class ProductServiceImpl implements ProductService {
 
     final CategoryRepository categoryRepository;
     final ProductRepository productRepository;
@@ -47,7 +51,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     final CategoryMetadataFieldValueRepository fieldValueRepository;
     final ProductVariationRepository variationRepository;
     final CategoryMetadataFieldRepository fieldRepository;
-    final Utils utils;
+    final MapperUtils mapperUtils;
     final FileUploadService fileUploadService;
 
     @Override
@@ -92,7 +96,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     @Override
     public ResponseHandler addProductVariation(String token, ProductVariationSaveCO productVariationSaveCO) throws IOException {
 
-        ResponseHandler responseHandler = utils.validateImage(productVariationSaveCO.getPrimaryImage());
+        ResponseHandler responseHandler = mapperUtils.validateImage(productVariationSaveCO.getPrimaryImage());
         if (responseHandler.getStatusCode() != 200) {
             return responseHandler;
         }
@@ -149,7 +153,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             return new ResponseHandler(AppResponse.PRODUCT_NOT_FOUND);
         }
 
-        ProductDTO productDTO = utils.convertToProductDTOS(Arrays.asList(product)).get(0);
+        ProductDTO productDTO = mapperUtils.convertToProductDTOS(Arrays.asList(product)).get(0);
         return new ResponseHandler(productDTO, AppResponse.OK);
     }
 
@@ -190,7 +194,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
     }
 
     @Override
-    public ResponseHandler getAllProduct(String token, FilterSaveCO filterSaveCO) {
+    public ResponseHandler getAllProduct(String token, PageFilterSaveCO pageFilterSaveCO) {
 
         String jwtToken = token.substring(7);
         String username = JWTService.getUsernameFromToken(jwtToken);
@@ -199,28 +203,28 @@ public class ProductSellerServiceImpl implements Product_SellerService {
             return new ResponseHandler(AppResponse.USER_NOT_FOUND);
         }
 
-        if (filterSaveCO == null) {
-            FilterSaveCO saveCO = new FilterSaveCO();
+        if (pageFilterSaveCO == null) {
+            PageFilterSaveCO saveCO = new PageFilterSaveCO();
             saveCO.setMax(null);
             saveCO.setOffset(null);
             saveCO.setOrder(null);
             saveCO.setSort(null);
-            filterSaveCO = saveCO;
+            pageFilterSaveCO = saveCO;
         }
-        Pageable pageable = utils.filterResultPageable(filterSaveCO.getMax(),
-                filterSaveCO.getOffset(),
-                filterSaveCO.getSort(),
-                filterSaveCO.getOrder());
+        Pageable pageable = mapperUtils.filterResultPageable(pageFilterSaveCO.getMax(),
+                pageFilterSaveCO.getOffset(),
+                pageFilterSaveCO.getSort(),
+                pageFilterSaveCO.getOrder());
         List<Product> productList = productRepository.findAllBySellerAndIsDeleted(seller, false, pageable);
         if (productList.size() == 0) {
             return new ResponseHandler(AppResponse.PRODUCT_LIST_NOT_FOUND);
         }
-        List<ProductDTO> productDTOS = utils.convertToProductDTOS(productList);
+        List<ProductDTO> productDTOS = mapperUtils.convertToProductDTOS(productList);
         return new ResponseHandler(productDTOS, AppResponse.OK);
     }
 
     @Override
-    public ResponseHandler getAllProductVariation(String token, Long productId, FilterSaveCO filterSaveCO) {
+    public ResponseHandler getAllProductVariation(String token, Long productId, PageFilterSaveCO pageFilterSaveCO) {
 
         String jwtToken = token.substring(7);
         String username = JWTService.getUsernameFromToken(jwtToken);
@@ -243,18 +247,18 @@ public class ProductSellerServiceImpl implements Product_SellerService {
         if (!product.getIsActive()) {
             return new ResponseHandler(AppResponse.PRODUCT_INACTIVE);
         }
-        if (filterSaveCO == null) {
-            FilterSaveCO saveCO = new FilterSaveCO();
+        if (pageFilterSaveCO == null) {
+            PageFilterSaveCO saveCO = new PageFilterSaveCO();
             saveCO.setMax(null);
             saveCO.setOffset(null);
             saveCO.setOrder(null);
             saveCO.setSort(null);
-            filterSaveCO = saveCO;
+            pageFilterSaveCO = saveCO;
         }
-        Pageable pageable = utils.filterResultPageable(filterSaveCO.getMax(),
-                filterSaveCO.getOffset(),
-                filterSaveCO.getSort(),
-                filterSaveCO.getOrder());
+        Pageable pageable = mapperUtils.filterResultPageable(pageFilterSaveCO.getMax(),
+                pageFilterSaveCO.getOffset(),
+                pageFilterSaveCO.getSort(),
+                pageFilterSaveCO.getOrder());
         List<ProductVariation> productVariationList = variationRepository.findByProduct(product, pageable);
         if (productVariationList.size() == 0) {
             return new ResponseHandler(AppResponse.PRODUCT_VARIATION_LIST_NOT_FOUND);
@@ -321,7 +325,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
         if (!isNameUnique(productUpdateSaveCO.getName(), product.getBrand(), product.getCategory(), seller)) {
             return new ResponseHandler(AppResponse.PRODUCT_NAME_IN_USE);
         }
-        utils.copyNonNullProperties(productUpdateSaveCO, product);
+        mapperUtils.copyNonNullProperties(productUpdateSaveCO, product);
         productRepository.save(product);
         return new ResponseHandler(AppResponse.PRODUCT_UPDATED);
     }
@@ -355,7 +359,7 @@ public class ProductSellerServiceImpl implements Product_SellerService {
                 return responseHandler;
             }
         }
-        utils.copyNonNullProperties(variationUpdateSaveCO, productVariation);
+        mapperUtils.copyNonNullProperties(variationUpdateSaveCO, productVariation);
 
         if (variationUpdateSaveCO.getPrimaryImage() != null) {
             String extension = variationUpdateSaveCO.getPrimaryImage().getContentType().substring(variationUpdateSaveCO.getPrimaryImage().getContentType().lastIndexOf("/") + 1);

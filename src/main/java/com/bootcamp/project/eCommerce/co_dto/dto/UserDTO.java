@@ -64,14 +64,4 @@ public class UserDTO {
 
     List<Address> address;
 
-//    List<GrantedAuthorityImpl> grantedAuthorities;
-//
-//    List<ProductReview> productReviews;
-//
-//    List<Order> orders;
-//
-//    Cart cart;
-//
-//    List<Product> products;
-
 }

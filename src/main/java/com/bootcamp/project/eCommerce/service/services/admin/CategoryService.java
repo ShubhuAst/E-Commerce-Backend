@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.service.services;
+package com.bootcamp.project.eCommerce.service.services.admin;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.saveCO.MetadataFieldValueSaveCO;
@@ -6,7 +6,7 @@ import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
 
 import java.util.Map;
 
-public interface Category_AdminService {
+public interface CategoryService {
 
     ResponseHandler addCategory(String name, Long parentID);
 

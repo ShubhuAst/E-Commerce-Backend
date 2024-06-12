@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.co_dto.saveCO;
+package com.bootcamp.project.eCommerce.co_dto.saveCO.filters;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -9,8 +9,8 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-public class FilterSaveCO {
+@FieldDefaults(level = AccessLevel.PROTECTED)
+public class PageFilterSaveCO {
 
     Integer max;
 

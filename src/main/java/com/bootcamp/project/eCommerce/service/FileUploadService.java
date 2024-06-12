@@ -21,7 +21,6 @@ public class FileUploadService {
 
     final String UPLOAD_DIR = new ClassPathResource("/static/images").getFile().getAbsolutePath();
 
-
     public FileUploadService() throws IOException {
     }
 

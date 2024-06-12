@@ -1,4 +1,4 @@
-package com.bootcamp.project.eCommerce.controller;
+package com.bootcamp.project.eCommerce.controller.customer;
 
 import com.bootcamp.project.eCommerce.ResponseHandler;
 import com.bootcamp.project.eCommerce.co_dto.dto.UserDTO;
@@ -11,7 +11,7 @@ import com.bootcamp.project.eCommerce.co_dto.saveCO.filters.CustomerSimilarProdu
 import com.bootcamp.project.eCommerce.constants.AppConstants;
 import com.bootcamp.project.eCommerce.exceptionHandler.GlobalException;
 import com.bootcamp.project.eCommerce.pojos.userFlow.user.Address;
-import com.bootcamp.project.eCommerce.service.services.CustomerService;
+import com.bootcamp.project.eCommerce.service.services.customer.CustomerService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

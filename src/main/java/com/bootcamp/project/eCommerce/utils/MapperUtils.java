@@ -30,7 +30,7 @@ import java.util.*;
 @Component
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Utils {
+public class MapperUtils {
 
     final ModelMapper modelMapper;
     final FileUploadService fileUploadService;
